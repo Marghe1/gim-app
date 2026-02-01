@@ -5,7 +5,6 @@ import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutLog, ExerciseLog, SetLog } from '../utils/storage';
 import {
   getWorkouts,
-  getWorkoutLogs,
   saveWorkoutLog,
   getExercises,
   getLastWeightForExercise,

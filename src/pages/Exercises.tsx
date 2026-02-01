@@ -276,7 +276,7 @@ export default function Exercises() {
 
       <div className="list">
         {filteredExercises.map(exercise => {
-          const previewWeight = showQuickSetup ? previewWeights[exercise.id] : null;
+          const previewWeight = showQuickSetup ? (previewWeights[exercise.id] ?? 0) : 0;
           const currentWeight = exercise.defaultWeight;
           const willChange = showQuickSetup && previewWeight !== currentWeight && (previewWeight > 0 || currentWeight);
 
