@@ -14,7 +14,17 @@
       "Bash(npm run build:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh auth:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git remote:*)",
+      "Bash(pbcopy:*)",
+      "Bash(ssh:*)",
+      "Bash(ssh-add:*)",
+      "Bash(git pull:*)",
+      "Bash(node:*)"
     ]
   }
 }
