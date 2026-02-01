@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, X, GripVertical, Play, Pencil } from 'lucide-react';
+import { Plus, Trash2, X, GripVertical, Play, Pencil, ChevronDown, ChevronRight, BookOpen, Copy } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
-import type { Workout, WorkoutExercise, Exercise } from '../utils/storage';
-import { getWorkouts, saveWorkout, deleteWorkout, getExercises } from '../utils/storage';
+import type { Workout, WorkoutExercise, Exercise, WorkoutTemplate } from '../utils/storage';
+import { getWorkouts, saveWorkout, deleteWorkout, getExercises, getWorkoutTemplates } from '../utils/storage';
 
 export default function Workouts() {
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
+
+  // Template library state
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -31,6 +36,7 @@ export default function Workouts() {
   function loadData() {
     setWorkouts(getWorkouts());
     setExercises(getExercises());
+    setTemplates(getWorkoutTemplates());
   }
 
   function openNewForm() {
@@ -110,6 +116,28 @@ export default function Workouts() {
     setFormExercises(newExercises);
   }
 
+  function importTemplate(template: WorkoutTemplate) {
+    const newWorkout: Workout = {
+      id: uuid(),
+      name: template.name,
+      description: template.description,
+      exercises: template.exercises.map(ex => ({
+        ...ex,
+        id: uuid(), // Generate new IDs for exercises
+      })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    saveWorkout(newWorkout);
+    loadData();
+    setShowTemplates(false);
+    setExpandedTemplate(null);
+  }
+
+  function toggleTemplateExpand(templateId: string) {
+    setExpandedTemplate(expandedTemplate === templateId ? null : templateId);
+  }
+
   // Main list view
   if (!showForm) {
     return (
@@ -123,6 +151,99 @@ export default function Workouts() {
           <Plus size={20} />
           Create Workout
         </button>
+
+        {/* Template Library Section */}
+        <div style={{ marginBottom: 24 }}>
+          <button
+            className="btn btn-secondary btn-block"
+            onClick={() => setShowTemplates(!showTemplates)}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: showTemplates ? 12 : 0,
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <BookOpen size={18} />
+              Browse Templates ({templates.length})
+            </span>
+            {showTemplates ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          </button>
+
+          {showTemplates && (
+            <div className="list" style={{ background: 'var(--color-surface)', borderRadius: 8 }}>
+              {templates.map(template => (
+                <div key={template.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <div
+                    className="list-item"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => toggleTemplateExpand(template.id)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {expandedTemplate === template.id ? (
+                        <ChevronDown size={16} />
+                      ) : (
+                        <ChevronRight size={16} />
+                      )}
+                      <div className="list-item-content">
+                        <div className="list-item-title">{template.name}</div>
+                        <div className="list-item-subtitle">
+                          {template.exercises.length} exercises • {template.category}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {expandedTemplate === template.id && (
+                    <div style={{ padding: '0 16px 16px 16px' }}>
+                      {template.description && (
+                        <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', marginBottom: 12 }}>
+                          {template.description}
+                        </p>
+                      )}
+                      <div style={{
+                        background: 'var(--color-background)',
+                        borderRadius: 6,
+                        padding: 12,
+                        marginBottom: 12,
+                      }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--color-text-secondary)' }}>
+                          EXERCISES
+                        </div>
+                        {template.exercises.map((ex, idx) => (
+                          <div
+                            key={ex.id}
+                            style={{
+                              fontSize: 13,
+                              padding: '6px 0',
+                              borderBottom: idx < template.exercises.length - 1 ? '1px solid var(--color-border)' : 'none',
+                            }}
+                          >
+                            <span style={{ fontWeight: 500 }}>{ex.exerciseName}</span>
+                            <span style={{ color: 'var(--color-text-secondary)', marginLeft: 8 }}>
+                              {ex.targetSets}×{ex.targetReps}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        className="btn btn-primary btn-block btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          importTemplate(template);
+                        }}
+                      >
+                        <Copy size={16} />
+                        Use This Template
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {workouts.length === 0 ? (
           <div className="empty-state">
