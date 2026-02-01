@@ -17,32 +17,57 @@ The first screen you see when opening the app.
 ### 2. My Workouts (Templates)
 Where you create and manage your circuit routines.
 - Create new workout templates (e.g., "Monday Upper Body", "Full Body Circuit")
+- **Browse Templates** - Pre-built PT session workouts ready to import
 - Each template contains a list of exercises with:
   - Exercise name (e.g., Squat, Bench Press)
   - Target sets (e.g., 3 sets)
   - Target reps (e.g., 12 reps)
   - Rest time between sets (e.g., 60 seconds)
 - Edit or delete existing templates
-- The app comes with common exercises pre-loaded, but you can add your own
 
-### 3. Start Workout
+### 3. Exercises
+Manage your exercise library.
+- **Quick Weight Setup** - Slider to set default weights for all exercises at once
+  - Drag from 1 (Beginner) to 10 (Expert)
+  - Weights auto-calculate by muscle group
+  - Preview changes in real-time before applying
+- Tap any exercise to see **Exercise Detail** page:
+  - Weight history graph
+  - Average effort rating
+  - Set default weight and increment
+  - Recent session history
+- Add, edit, or delete custom exercises
+- Filter by muscle group
+
+### 4. Active Workout
 Where you actually do your workout and log your progress.
-- Pick a saved template or create a quick workout
+- **Swipe Navigation** - Swipe left/right to change exercises
+- **Tap dots** at top to jump to any exercise
 - For each exercise, log:
-  - How many reps you did
-  - What weight you used (kg or lbs)
+  - Weight (kg) with +/- buttons
+  - Reps with +/- buttons
   - Mark sets as completed
-- Built-in rest timer (counts down between sets)
-- See your previous performance for comparison (e.g., "Last time: 40kg x 12")
-- Save the workout when finished
+- **Add/Remove Sets** - Add extra sets or remove unwanted ones
+- **Skip Exercise** - Skip exercises you want to skip today
+- **Effort Rating** - After completing all sets, rate 1-5 how hard it was
+- **Rest Timer** - Auto-starts when you complete a set
+- **Smart Weight Pre-fill** - Weights auto-fill from last workout or default
 
-### 4. History
+### 5. Workout Complete
+After finishing a workout:
+- See duration and exercises completed
+- **Progression Suggestions** based on your effort ratings:
+  - ↑ "Try 42.5kg next time" (if rated easy)
+  - ✓ "Good challenge level" (if moderate)
+  - ↓ "Consider reducing" (if rated maximum)
+
+### 6. History
 View all your past workouts.
 - List of completed workouts sorted by date
 - Tap on any workout to see the details (exercises, weights, reps)
 - Delete old records if needed
 
-### 5. Progress
+### 7. Progress
 Charts showing your improvement over time.
 - See how your weights have increased for each exercise
 - Track total workouts per week/month
@@ -54,47 +79,80 @@ Charts showing your improvement over time.
 
 | Feature | Description |
 |---------|-------------|
-| **Workout Templates** | Save your circuits so you don't have to recreate them every time |
-| **Track Weights & Reps** | Log exactly what you did in each set |
-| **Rest Timer** | Automatic countdown between sets with sound notification |
-| **Progress Charts** | Visual graphs showing your improvement |
-| **Previous Results** | See what you did last time while working out |
-| **Works Offline** | Use the app even without internet |
-| **Installable** | Add to your phone's home screen like a regular app |
+| **Workout Templates** | Save your circuits so you don't have to recreate them |
+| **PT Session Templates** | 4 pre-built workouts from personal trainer sessions |
+| **Quick Weight Setup** | Set weights for all exercises with a single slider |
+| **Smart Weight Pre-fill** | Auto-fills weights from your last workout |
+| **Effort Rating** | Rate each exercise 1-5 to track difficulty |
+| **Progression Suggestions** | Get recommendations to increase weights |
+| **Swipe Between Exercises** | Navigate workouts with touch gestures |
+| **Add/Remove Sets** | Adjust sets during workout |
+| **Skip Exercises** | Skip exercises without losing the workout |
+| **Rest Timer** | Automatic countdown with vibration alert |
+| **Progress Charts** | Visual graphs per exercise |
+| **Exercise Detail Page** | Weight history and stats per exercise |
+| **Works Offline** | Use the app without internet |
+| **Installable** | Add to your phone's home screen |
 | **No Account Needed** | Data stored locally on your device |
 
 ---
 
 ## Exercise Library
 
-The app will come with common gym exercises pre-loaded:
+The app comes with 57 exercises pre-loaded across these categories:
 
-**Legs:** Squat, Lunges, Leg Press, Leg Curl, Leg Extension
+**Legs:** Squat, Back Squat, Lunges, Reverse Lunge, Leg Press, Leg Curl, Leg Extension, Romanian Deadlift, Bulgarian Split Squat, Walking Lunge with Rotation, Lateral Step Down
 
-**Back:** Deadlift, Pull-ups, Barbell Row, Lat Pulldown, Cable Row
+**Back:** Deadlift, Pull-ups, Barbell Row, Bent-Over Row, Lat Pulldown, Cable Row, Seated Row, Elevated Plank Row, Suspended Row
 
-**Chest:** Bench Press, Push-ups, Chest Fly
+**Chest:** Bench Press, Flat Bench Press, Push-ups, Chest Fly
 
-**Shoulders:** Overhead Press, Lateral Raise
+**Shoulders:** Overhead Press, Shoulder Press, Lateral Raise
 
 **Arms:** Dumbbell Curl, Tricep Dips
 
-**Core:** Plank, Russian Twist
+**Core:** Plank, Side Plank, Russian Twist, Cable Pallof Press, Cable Pallof Rotation, Hollow Body Hold, Pike Lifts, Copenhagen Plank, Overhead March, Kettlebell Windmill, Curl Up
 
-**Full Body:** Kettlebell Swing
+**Glutes:** Hip Thrust, Glute Bridge, Kettlebell Pullthrough
+
+**Full Body:** Kettlebell Swing, Ball Slams, Med Ball Throws, Wall Ball Shots
+
+**Plyometrics:** Drop Jump, Counter Movement Jump
+
+**Warm-up:** Ankle Pumps, Heel Drops, Hip Mobility, Cat Cow, Prone Scorpion, Thoracic Rotations
+
+**Cardio:** Stair Climber, Incline Walk
 
 You can add custom exercises anytime.
 
 ---
 
-## Your Preferences (Confirmed)
+## PT Session Templates
+
+Four pre-built workout templates from personal trainer sessions:
+
+1. **Session A1 - Lower Body Focus** (12 exercises)
+   - Warm-up, core work, leg press, Romanian deadlifts, Bulgarian splits, hip thrusts
+
+2. **Session A2 - Full Body Circuit** (16 exercises)
+   - Mobility warm-up, plyometrics, med ball work, push-ups, rows
+
+3. **Session 1 - Lower Pull / Upper Push** (9 exercises)
+   - Deadlifts, bench press, shoulder press, leg curls
+
+4. **Session 2 - Lower Push / Upper Pull** (9 exercises)
+   - Back squats, bent-over rows, lat pulldowns, leg extensions
+
+---
+
+## Your Preferences
 
 - **Weight units:** Kilograms (kg)
 - **Timer alerts:** Vibration only (no sound)
 
 ---
 
-## Technical Details (for reference)
+## Technical Details
 
 - **Type:** Progressive Web App (PWA)
 - **Works on:** Any modern browser (Chrome, Safari, Firefox)

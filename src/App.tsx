@@ -7,6 +7,7 @@ import Workouts from './pages/Workouts';
 import History from './pages/History';
 import Progress from './pages/Progress';
 import ActiveWorkout from './pages/ActiveWorkout';
+import About from './pages/About';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="workouts" element={<Workouts />} />
           <Route path="history" element={<History />} />
           <Route path="progress" element={<Progress />} />
+          <Route path="about" element={<About />} />
         </Route>
         <Route path="/workout/:workoutId" element={<ActiveWorkout />} />
       </Routes>

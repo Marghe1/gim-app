@@ -154,6 +154,20 @@ export default function Home() {
           Export your data to a file for backup or transfer to another device
         </p>
       </div>
+
+      {/* About link */}
+      <div style={{ marginTop: 32, textAlign: 'center' }}>
+        <Link
+          to="/about"
+          style={{
+            fontSize: 12,
+            color: '#d1d5db',
+            textDecoration: 'none',
+          }}
+        >
+          About this app
+        </Link>
+      </div>
     </div>
   );
 }
