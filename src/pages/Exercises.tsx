@@ -1,11 +1,39 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Pencil, Trash2, X, ChevronRight } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, ChevronRight, Sliders, Check } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import type { Exercise } from '../utils/storage';
 import { getExercises, saveExercise, deleteExercise } from '../utils/storage';
 
 const MUSCLE_GROUPS = ['All', 'Legs', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core', 'Full Body', 'Warm-up', 'Glutes', 'Cardio', 'Plyometrics'];
+
+// Weight multipliers by muscle group (base weight at level 5)
+// These represent typical weights for each muscle group
+const MUSCLE_GROUP_MULTIPLIERS: { [key: string]: number } = {
+  'Legs': 40,        // Squats, leg press - heavier
+  'Back': 35,        // Deadlifts, rows - heavy
+  'Chest': 30,       // Bench press - medium-heavy
+  'Glutes': 30,      // Hip thrusts - medium-heavy
+  'Shoulders': 15,   // Shoulder press - medium
+  'Arms': 10,        // Curls, triceps - lighter
+  'Full Body': 20,   // Kettlebell swings - medium
+  'Core': 0,         // Bodyweight exercises
+  'Warm-up': 0,      // Bodyweight/mobility
+  'Cardio': 0,       // No weight
+  'Plyometrics': 0,  // Bodyweight jumps
+};
+
+// Calculate weight for an exercise based on strength level (1-10)
+function calculateWeight(muscleGroup: string, level: number): number {
+  const baseWeight = MUSCLE_GROUP_MULTIPLIERS[muscleGroup] || 0;
+  if (baseWeight === 0) return 0;
+
+  // Level 1 = 20% of base, Level 10 = 200% of base
+  // Level 5 = 100% (the base weight)
+  const multiplier = 0.2 + (level - 1) * 0.2;
+  const weight = Math.round(baseWeight * multiplier * 2) / 2; // Round to nearest 0.5
+  return weight;
+}
 
 export default function Exercises() {
   const navigate = useNavigate();
@@ -18,9 +46,23 @@ export default function Exercises() {
   const [formMuscleGroup, setFormMuscleGroup] = useState('Legs');
   const [formNotes, setFormNotes] = useState('');
 
+  // Quick setup mode
+  const [showQuickSetup, setShowQuickSetup] = useState(false);
+  const [strengthLevel, setStrengthLevel] = useState(5);
+  const [previewWeights, setPreviewWeights] = useState<{ [id: string]: number }>({});
+
   useEffect(() => {
     loadExercises();
   }, []);
+
+  // Update preview weights when strength level changes
+  useEffect(() => {
+    const weights: { [id: string]: number } = {};
+    exercises.forEach(ex => {
+      weights[ex.id] = calculateWeight(ex.muscleGroup, strengthLevel);
+    });
+    setPreviewWeights(weights);
+  }, [strengthLevel, exercises]);
 
   function loadExercises() {
     setExercises(getExercises());
@@ -70,12 +112,140 @@ export default function Exercises() {
     }
   }
 
+  function applyQuickSetup() {
+    // Save all exercises with the calculated weights
+    exercises.forEach(ex => {
+      const weight = previewWeights[ex.id];
+      if (weight > 0 || ex.defaultWeight) {
+        const updated: Exercise = {
+          ...ex,
+          defaultWeight: weight > 0 ? weight : undefined,
+        };
+        saveExercise(updated);
+      }
+    });
+    loadExercises();
+    setShowQuickSetup(false);
+  }
+
+  // Get level label
+  const getLevelLabel = (level: number): string => {
+    if (level <= 2) return 'Beginner';
+    if (level <= 4) return 'Novice';
+    if (level <= 6) return 'Intermediate';
+    if (level <= 8) return 'Advanced';
+    return 'Expert';
+  };
+
+  // Count exercises that will get weights
+  const exercisesWithWeights = Object.values(previewWeights).filter(w => w > 0).length;
+
   return (
     <div className="page">
       <div className="page-header">
         <h1 className="page-title">Exercises</h1>
         <p className="page-subtitle">Manage your exercise library</p>
       </div>
+
+      {/* Quick Setup Panel */}
+      {showQuickSetup ? (
+        <div style={{
+          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          borderRadius: 16,
+          padding: 20,
+          marginBottom: 20,
+          color: 'white',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Quick Weight Setup</h3>
+            <button
+              className="btn btn-ghost"
+              onClick={() => setShowQuickSetup(false)}
+              style={{ color: 'white', padding: 4 }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 20 }}>
+            Drag the slider to set starting weights for all exercises based on your strength level.
+          </p>
+
+          {/* Strength Level Display */}
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ fontSize: 48, fontWeight: 700 }}>{strengthLevel}</div>
+            <div style={{ fontSize: 16, opacity: 0.9 }}>{getLevelLabel(strengthLevel)}</div>
+          </div>
+
+          {/* Slider */}
+          <div style={{ marginBottom: 20 }}>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={strengthLevel}
+              onChange={e => setStrengthLevel(Number(e.target.value))}
+              style={{
+                width: '100%',
+                height: 8,
+                borderRadius: 4,
+                appearance: 'none',
+                background: 'rgba(255,255,255,0.3)',
+                cursor: 'pointer',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, opacity: 0.7, marginTop: 8 }}>
+              <span>1 - Beginner</span>
+              <span>10 - Expert</span>
+            </div>
+          </div>
+
+          {/* Preview Summary */}
+          <div style={{
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 16,
+          }}>
+            <div style={{ fontSize: 14, marginBottom: 8 }}>Preview:</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 13 }}>
+              <div>Legs: <strong>{calculateWeight('Legs', strengthLevel)}kg</strong></div>
+              <div>Back: <strong>{calculateWeight('Back', strengthLevel)}kg</strong></div>
+              <div>Chest: <strong>{calculateWeight('Chest', strengthLevel)}kg</strong></div>
+              <div>Shoulders: <strong>{calculateWeight('Shoulders', strengthLevel)}kg</strong></div>
+              <div>Arms: <strong>{calculateWeight('Arms', strengthLevel)}kg</strong></div>
+              <div>Full Body: <strong>{calculateWeight('Full Body', strengthLevel)}kg</strong></div>
+            </div>
+          </div>
+
+          <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 16 }}>
+            {exercisesWithWeights} exercises will be updated. Core, warm-up, and cardio stay at 0kg.
+          </p>
+
+          <button
+            className="btn btn-block"
+            onClick={applyQuickSetup}
+            style={{
+              background: 'white',
+              color: '#6366f1',
+              fontWeight: 600,
+              padding: 14,
+            }}
+          >
+            <Check size={18} />
+            Apply Weights to All Exercises
+          </button>
+        </div>
+      ) : (
+        <button
+          className="btn btn-secondary btn-block"
+          onClick={() => setShowQuickSetup(true)}
+          style={{ marginBottom: 16 }}
+        >
+          <Sliders size={18} />
+          Quick Weight Setup
+        </button>
+      )}
 
       <div className="search-box">
         <Search />
@@ -105,37 +275,69 @@ export default function Exercises() {
       </button>
 
       <div className="list">
-        {filteredExercises.map(exercise => (
-          <div
-            key={exercise.id}
-            className="list-item"
-            style={{ cursor: 'pointer' }}
-            onClick={() => navigate(`/exercise/${exercise.id}`)}
-          >
-            <div className="list-item-content">
-              <div className="list-item-title">{exercise.name}</div>
-              <div className="list-item-subtitle">
-                {exercise.muscleGroup}
-                {exercise.defaultWeight && ` • ${exercise.defaultWeight}kg`}
+        {filteredExercises.map(exercise => {
+          const previewWeight = showQuickSetup ? previewWeights[exercise.id] : null;
+          const currentWeight = exercise.defaultWeight;
+          const willChange = showQuickSetup && previewWeight !== currentWeight && (previewWeight > 0 || currentWeight);
+
+          return (
+            <div
+              key={exercise.id}
+              className="list-item"
+              style={{
+                cursor: 'pointer',
+                background: willChange ? '#fef3c7' : undefined,
+                transition: 'background 0.2s',
+              }}
+              onClick={() => !showQuickSetup && navigate(`/exercise/${exercise.id}`)}
+            >
+              <div className="list-item-content">
+                <div className="list-item-title">{exercise.name}</div>
+                <div className="list-item-subtitle">
+                  {exercise.muscleGroup}
+                  {showQuickSetup ? (
+                    // Show preview weight in quick setup mode
+                    previewWeight > 0 ? (
+                      <span style={{ marginLeft: 8 }}>
+                        {currentWeight ? (
+                          <>
+                            <span style={{ textDecoration: 'line-through', opacity: 0.5 }}>{currentWeight}kg</span>
+                            {' → '}
+                            <strong style={{ color: '#d97706' }}>{previewWeight}kg</strong>
+                          </>
+                        ) : (
+                          <strong style={{ color: '#059669' }}>+ {previewWeight}kg</strong>
+                        )}
+                      </span>
+                    ) : currentWeight ? (
+                      <span style={{ marginLeft: 8, opacity: 0.5 }}>{currentWeight}kg (no change)</span>
+                    ) : null
+                  ) : (
+                    // Normal mode - show current weight
+                    currentWeight && <span> • {currentWeight}kg</span>
+                  )}
+                </div>
               </div>
+              {!showQuickSetup && (
+                <div className="list-item-actions">
+                  <button
+                    className="btn btn-ghost"
+                    onClick={(e) => { e.stopPropagation(); openEditModal(exercise); }}
+                  >
+                    <Pencil size={18} />
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(exercise.id); }}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  <ChevronRight size={18} style={{ color: '#9ca3af' }} />
+                </div>
+              )}
             </div>
-            <div className="list-item-actions">
-              <button
-                className="btn btn-ghost"
-                onClick={(e) => { e.stopPropagation(); openEditModal(exercise); }}
-              >
-                <Pencil size={18} />
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={(e) => { e.stopPropagation(); handleDelete(exercise.id); }}
-              >
-                <Trash2 size={18} />
-              </button>
-              <ChevronRight size={18} style={{ color: '#9ca3af' }} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {filteredExercises.length === 0 && (
