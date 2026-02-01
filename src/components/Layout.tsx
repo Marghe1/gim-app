@@ -1,0 +1,30 @@
+import { NavLink, Outlet } from 'react-router-dom';
+import { Home, ClipboardList, Clock, TrendingUp } from 'lucide-react';
+
+export default function Layout() {
+  return (
+    <div className="app-container">
+      <Outlet />
+      <nav className="bottom-nav">
+        <div className="bottom-nav-inner">
+          <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
+            <Home />
+            <span>Home</span>
+          </NavLink>
+          <NavLink to="/workouts" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <ClipboardList />
+            <span>Workouts</span>
+          </NavLink>
+          <NavLink to="/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <Clock />
+            <span>History</span>
+          </NavLink>
+          <NavLink to="/progress" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <TrendingUp />
+            <span>Progress</span>
+          </NavLink>
+        </div>
+      </nav>
+    </div>
+  );
+}
