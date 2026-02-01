@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, X, Play, Pause, RotateCcw, Check, Minus, Plus, Clock } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, Check, Minus, Plus, Clock, SkipForward, Trash2 } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
-import type { Workout, WorkoutLog, ExerciseLog } from '../utils/storage';
+import type { Workout, WorkoutLog, ExerciseLog, SetLog } from '../utils/storage';
 import {
   getWorkouts,
   getWorkoutLogs,
@@ -37,8 +37,14 @@ export default function ActiveWorkout() {
   const [timerTarget, setTimerTarget] = useState(60);
   const timerRef = useRef<number | null>(null);
 
-  // Previous workout data for comparison
-  const [previousLogs, setPreviousLogs] = useState<ExerciseLog[]>([]);
+  // Swipe state
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+
+  // Skipped exercises
+  const [skippedExercises, setSkippedExercises] = useState<Set<number>>(new Set());
 
   // Effort rating modal
   const [showEffortModal, setShowEffortModal] = useState(false);
@@ -67,11 +73,15 @@ export default function ActiveWorkout() {
 
       // Initialize exercise logs with smart weight pre-fill
       const logs: ExerciseLog[] = found.exercises.map(ex => {
-        // Try to get last used weight, then default weight, then 0
+        // Try to get last used weight
         const lastWeight = getLastWeightForExercise(ex.exerciseId);
+
+        // Get default weight from exercise library
         const exerciseData = allExercises.find(e => e.id === ex.exerciseId);
-        const defaultWeight = exerciseData?.defaultWeight || 0;
-        const prefillWeight = lastWeight ?? defaultWeight;
+        const defaultWeight = exerciseData?.defaultWeight ?? 0;
+
+        // Use last weight if available, otherwise default weight
+        const prefillWeight = lastWeight !== null ? lastWeight : defaultWeight;
 
         return {
           exerciseId: ex.exerciseId,
@@ -85,15 +95,6 @@ export default function ActiveWorkout() {
         };
       });
       setExerciseLogs(logs);
-
-      // Find previous workout for comparison
-      const allLogs = getWorkoutLogs();
-      const prevLog = allLogs
-        .filter(l => l.workoutId === workoutId && l.completed)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-      if (prevLog) {
-        setPreviousLogs(prevLog.exercises);
-      }
     }
   }, [workoutId]);
 
@@ -104,7 +105,6 @@ export default function ActiveWorkout() {
         setTimerSeconds(s => s - 1);
       }, 1000);
     } else if (timerRunning && timerSeconds === 0) {
-      // Timer finished - vibrate
       if (navigator.vibrate) {
         navigator.vibrate([200, 100, 200]);
       }
@@ -130,7 +130,56 @@ export default function ActiveWorkout() {
 
   const currentExercise = workout.exercises[currentExerciseIndex];
   const currentLog = exerciseLogs[currentExerciseIndex];
-  const previousLog = previousLogs.find(p => p.exerciseId === currentExercise?.exerciseId);
+  const isCurrentSkipped = skippedExercises.has(currentExerciseIndex);
+
+  // Navigation with animation
+  function goToExercise(index: number) {
+    if (index < 0 || index >= workout!.exercises.length || isAnimating) return;
+
+    const direction = index > currentExerciseIndex ? 'left' : 'right';
+    setSlideDirection(direction);
+    setIsAnimating(true);
+
+    setTimeout(() => {
+      setCurrentExerciseIndex(index);
+      setSlideDirection(null);
+      setTimeout(() => setIsAnimating(false), 50);
+    }, 200);
+  }
+
+  function goNext() {
+    if (currentExerciseIndex < workout!.exercises.length - 1) {
+      goToExercise(currentExerciseIndex + 1);
+    }
+  }
+
+  function goPrevious() {
+    if (currentExerciseIndex > 0) {
+      goToExercise(currentExerciseIndex - 1);
+    }
+  }
+
+  // Touch handlers for swipe
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    touchEndX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd() {
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        goNext();
+      } else {
+        goPrevious();
+      }
+    }
+  }
 
   function updateSet(setIndex: number, field: 'weight' | 'reps', value: number) {
     const newLogs = [...exerciseLogs];
@@ -167,11 +216,55 @@ export default function ActiveWorkout() {
       // Check if all sets for this exercise are now complete
       const allSetsComplete = newLogs[currentExerciseIndex].sets.every(s => s.completed);
       if (allSetsComplete && newLogs[currentExerciseIndex].effortRating === undefined) {
-        // Show effort rating modal
         setPendingEffortExerciseIndex(currentExerciseIndex);
         setShowEffortModal(true);
       }
     }
+  }
+
+  function addSet() {
+    const newLogs = [...exerciseLogs];
+    const currentSets = newLogs[currentExerciseIndex].sets;
+    const lastSet = currentSets[currentSets.length - 1];
+
+    const newSet: SetLog = {
+      setNumber: currentSets.length + 1,
+      reps: lastSet?.reps || currentExercise?.targetReps || 10,
+      weight: lastSet?.weight || 0,
+      completed: false,
+    };
+
+    newLogs[currentExerciseIndex].sets.push(newSet);
+    setExerciseLogs(newLogs);
+  }
+
+  function removeSet(setIndex: number) {
+    const newLogs = [...exerciseLogs];
+    if (newLogs[currentExerciseIndex].sets.length <= 1) return;
+
+    newLogs[currentExerciseIndex].sets.splice(setIndex, 1);
+    // Renumber sets
+    newLogs[currentExerciseIndex].sets.forEach((set, idx) => {
+      set.setNumber = idx + 1;
+    });
+    setExerciseLogs(newLogs);
+  }
+
+  function skipExercise() {
+    const newSkipped = new Set(skippedExercises);
+    newSkipped.add(currentExerciseIndex);
+    setSkippedExercises(newSkipped);
+
+    // Auto-advance to next exercise
+    if (currentExerciseIndex < workout!.exercises.length - 1) {
+      goNext();
+    }
+  }
+
+  function unskipExercise() {
+    const newSkipped = new Set(skippedExercises);
+    newSkipped.delete(currentExerciseIndex);
+    setSkippedExercises(newSkipped);
   }
 
   function setEffortRating(rating: number) {
@@ -184,9 +277,9 @@ export default function ActiveWorkout() {
     setShowEffortModal(false);
     setPendingEffortExerciseIndex(null);
 
-    // Auto-advance to next exercise if available
+    // Auto-advance to next exercise
     if (currentExerciseIndex < workout!.exercises.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setTimeout(() => goNext(), 100);
     }
   }
 
@@ -194,9 +287,8 @@ export default function ActiveWorkout() {
     setShowEffortModal(false);
     setPendingEffortExerciseIndex(null);
 
-    // Auto-advance to next exercise if available
     if (currentExerciseIndex < workout!.exercises.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setTimeout(() => goNext(), 100);
     }
   }
 
@@ -224,8 +316,10 @@ export default function ActiveWorkout() {
     if (!workout) return;
     const duration = Math.floor((Date.now() - startTime) / 1000);
 
-    // Generate suggestions based on effort ratings
-    const progressionSuggestions = getProgressionSuggestions(exerciseLogs);
+    // Filter out skipped exercises from logs
+    const completedLogs = exerciseLogs.filter((_, idx) => !skippedExercises.has(idx));
+
+    const progressionSuggestions = getProgressionSuggestions(completedLogs);
     setSuggestions(progressionSuggestions);
 
     const log: WorkoutLog = {
@@ -234,7 +328,7 @@ export default function ActiveWorkout() {
       workoutName: workout.name,
       date: new Date().toISOString(),
       duration,
-      exercises: exerciseLogs,
+      exercises: completedLogs,
       completed: true,
     };
     saveWorkoutLog(log);
@@ -254,17 +348,29 @@ export default function ActiveWorkout() {
 
   const completedSets = currentLog?.sets.filter(s => s.completed).length || 0;
   const totalSets = currentLog?.sets.length || 0;
-  const allExercisesComplete = exerciseLogs.every(ex => ex.sets.every(s => s.completed));
 
-  // Format elapsed time
+  // Check if workout can be finished (all non-skipped exercises have all sets complete)
+  const canFinish = exerciseLogs.every((ex, idx) =>
+    skippedExercises.has(idx) || ex.sets.every(s => s.completed)
+  );
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Animation styles
+  const getSlideStyle = () => {
+    if (!slideDirection) return {};
+    return {
+      transform: slideDirection === 'left' ? 'translateX(-100%)' : 'translateX(100%)',
+      opacity: 0,
+    };
+  };
+
   return (
-    <div className="page" style={{ paddingBottom: 100 }}>
+    <div className="page" style={{ paddingBottom: 100, overflow: 'hidden' }}>
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -286,268 +392,290 @@ export default function ActiveWorkout() {
         <div style={{ width: 40 }} />
       </div>
 
-      {/* Exercise navigation */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-        background: '#f3f4f6',
-        borderRadius: 12,
-        padding: 12,
-      }}>
-        <button
-          className="btn btn-ghost"
-          onClick={() => setCurrentExerciseIndex(i => i - 1)}
-          disabled={currentExerciseIndex === 0}
-          style={{ padding: 8 }}
-        >
-          <ChevronLeft size={28} />
-        </button>
-        <div style={{ textAlign: 'center', flex: 1 }}>
-          <div style={{ fontSize: 18, fontWeight: 600 }}>{currentExercise?.exerciseName}</div>
-          <div style={{ fontSize: 13, color: '#6b7280' }}>
-            Exercise {currentExerciseIndex + 1} of {workout.exercises.length}
-          </div>
-        </div>
-        <button
-          className="btn btn-ghost"
-          onClick={() => setCurrentExerciseIndex(i => i + 1)}
-          disabled={currentExerciseIndex === workout.exercises.length - 1}
-          style={{ padding: 8 }}
-        >
-          <ChevronRight size={28} />
-        </button>
-      </div>
-
-      {/* Target info & previous performance */}
-      <div style={{
-        background: 'white',
-        border: '1px solid #e5e7eb',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 16,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <span style={{ fontSize: 13, color: '#6b7280' }}>Target: </span>
-            <strong>{currentExercise?.targetSets} × {currentExercise?.targetReps}</strong>
-          </div>
-          {previousLog && previousLog.sets[0] && (
-            <div style={{ fontSize: 13, color: '#6b7280' }}>
-              Last: {previousLog.sets[0].weight}kg × {previousLog.sets[0].reps}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Sets */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontWeight: 600 }}>Sets</span>
-          <span style={{ color: '#6b7280', fontSize: 14 }}>{completedSets}/{totalSets} done</span>
-        </div>
-
-        <div style={{ display: 'grid', gap: 10 }}>
-          {currentLog?.sets.map((set, index) => (
-            <div
-              key={index}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '36px 1fr 1fr 48px',
-                gap: 8,
-                alignItems: 'center',
-                padding: 12,
-                background: set.completed ? '#dcfce7' : 'white',
-                border: `2px solid ${set.completed ? '#22c55e' : '#e5e7eb'}`,
-                borderRadius: 12,
-              }}
-            >
-              <div style={{
-                fontWeight: 700,
-                fontSize: 16,
-                color: set.completed ? '#22c55e' : '#6b7280',
-                textAlign: 'center',
-              }}>
-                {set.setNumber}
-              </div>
-
-              {/* Weight input with +/- */}
-              <div>
-                <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>KG</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <button
-                    className="btn btn-ghost"
-                    style={{ padding: 4, minWidth: 28 }}
-                    onClick={() => adjustWeight(index, -2.5)}
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <input
-                    type="number"
-                    style={{
-                      width: '100%',
-                      padding: '8px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: 6,
-                      fontSize: 16,
-                      fontWeight: 600,
-                      textAlign: 'center',
-                    }}
-                    value={set.weight || ''}
-                    onChange={e => updateSet(index, 'weight', Number(e.target.value))}
-                    placeholder="0"
-                  />
-                  <button
-                    className="btn btn-ghost"
-                    style={{ padding: 4, minWidth: 28 }}
-                    onClick={() => adjustWeight(index, 2.5)}
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Reps input with +/- */}
-              <div>
-                <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>REPS</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <button
-                    className="btn btn-ghost"
-                    style={{ padding: 4, minWidth: 28 }}
-                    onClick={() => adjustReps(index, -1)}
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <input
-                    type="number"
-                    style={{
-                      width: '100%',
-                      padding: '8px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: 6,
-                      fontSize: 16,
-                      fontWeight: 600,
-                      textAlign: 'center',
-                    }}
-                    value={set.reps}
-                    onChange={e => updateSet(index, 'reps', Number(e.target.value))}
-                  />
-                  <button
-                    className="btn btn-ghost"
-                    style={{ padding: 4, minWidth: 28 }}
-                    onClick={() => adjustReps(index, 1)}
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Complete button */}
-              <button
-                className={`btn ${set.completed ? 'btn-primary' : 'btn-secondary'}`}
-                style={{
-                  padding: 8,
-                  height: 48,
-                  width: 48,
-                  marginTop: 16,
-                  borderRadius: 12,
-                }}
-                onClick={() => toggleSetComplete(index)}
-              >
-                <Check size={20} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Exercise dots navigation */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 16 }}>
         {workout.exercises.map((_, index) => {
           const exLog = exerciseLogs[index];
+          const isSkipped = skippedExercises.has(index);
           const isComplete = exLog?.sets.every(s => s.completed);
           const isPartial = exLog?.sets.some(s => s.completed);
           const hasRating = exLog?.effortRating !== undefined;
+
           return (
             <button
               key={index}
-              onClick={() => setCurrentExerciseIndex(index)}
+              onClick={() => goToExercise(index)}
               style={{
-                width: 14,
-                height: 14,
+                width: 16,
+                height: 16,
                 borderRadius: '50%',
-                border: hasRating ? '2px solid #f59e0b' : 'none',
+                border: hasRating ? '2px solid #f59e0b' : index === currentExerciseIndex ? '2px solid #6366f1' : 'none',
                 cursor: 'pointer',
-                background: isComplete ? '#22c55e' : isPartial ? '#f59e0b' : index === currentExerciseIndex ? '#6366f1' : '#d1d5db',
+                background: isSkipped ? '#9ca3af' : isComplete ? '#22c55e' : isPartial ? '#f59e0b' : '#e5e7eb',
+                transition: 'all 0.2s',
+                transform: index === currentExerciseIndex ? 'scale(1.2)' : 'scale(1)',
               }}
             />
           );
         })}
       </div>
 
-      {/* Rest Timer */}
-      <div style={{
-        background: timerRunning ? '#6366f1' : '#f3f4f6',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 20,
-        color: timerRunning ? 'white' : '#374151',
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>REST TIMER</div>
-          <div style={{ fontSize: 48, fontWeight: 700, fontFamily: 'monospace' }}>
-            {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
+      {/* Swipeable exercise container */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transition: 'transform 0.2s ease-out, opacity 0.2s ease-out',
+          ...getSlideStyle(),
+        }}
+      >
+        {/* Exercise header */}
+        <div style={{
+          background: isCurrentSkipped ? '#f3f4f6' : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          borderRadius: 16,
+          padding: 20,
+          marginBottom: 16,
+          color: isCurrentSkipped ? '#6b7280' : 'white',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>
+            Exercise {currentExerciseIndex + 1} of {workout.exercises.length}
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
+            {currentExercise?.exerciseName}
+            {isCurrentSkipped && ' (Skipped)'}
+          </div>
+          <div style={{ fontSize: 14, opacity: 0.9 }}>
+            Target: {currentExercise?.targetSets} × {currentExercise?.targetReps} reps
+          </div>
+
+          {/* Skip/Unskip button */}
+          <div style={{ marginTop: 12 }}>
+            {isCurrentSkipped ? (
+              <button
+                className="btn btn-sm"
+                onClick={unskipExercise}
+                style={{ background: 'white', color: '#6366f1' }}
+              >
+                Restore Exercise
+              </button>
+            ) : (
+              <button
+                className="btn btn-sm"
+                onClick={skipExercise}
+                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
+              >
+                <SkipForward size={16} />
+                Skip Exercise
+              </button>
+            )}
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => adjustTimer(-15)}
-            style={{ background: timerRunning ? 'rgba(255,255,255,0.2)' : undefined }}
-          >
-            -15s
-          </button>
-          {!timerRunning ? (
-            <button className="btn btn-secondary btn-sm" onClick={startTimer}>
-              <Play size={16} /> Start
+
+        {/* Sets - only show if not skipped */}
+        {!isCurrentSkipped && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ fontWeight: 600 }}>Sets ({completedSets}/{totalSets})</span>
+              <button className="btn btn-secondary btn-sm" onClick={addSet}>
+                <Plus size={16} /> Add Set
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gap: 10 }}>
+              {currentLog?.sets.map((set, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '32px 1fr 1fr 44px 32px',
+                    gap: 6,
+                    alignItems: 'center',
+                    padding: 12,
+                    background: set.completed ? '#dcfce7' : 'white',
+                    border: `2px solid ${set.completed ? '#22c55e' : '#e5e7eb'}`,
+                    borderRadius: 12,
+                  }}
+                >
+                  <div style={{
+                    fontWeight: 700,
+                    fontSize: 14,
+                    color: set.completed ? '#22c55e' : '#6b7280',
+                    textAlign: 'center',
+                  }}>
+                    {set.setNumber}
+                  </div>
+
+                  {/* Weight input */}
+                  <div>
+                    <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>KG</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: 2, minWidth: 24, fontSize: 12 }}
+                        onClick={() => adjustWeight(index, -2.5)}
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <input
+                        type="number"
+                        style={{
+                          width: '100%',
+                          padding: '6px 2px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: 6,
+                          fontSize: 14,
+                          fontWeight: 600,
+                          textAlign: 'center',
+                        }}
+                        value={set.weight || ''}
+                        onChange={e => updateSet(index, 'weight', Number(e.target.value))}
+                        placeholder="0"
+                      />
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: 2, minWidth: 24, fontSize: 12 }}
+                        onClick={() => adjustWeight(index, 2.5)}
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Reps input */}
+                  <div>
+                    <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>REPS</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: 2, minWidth: 24, fontSize: 12 }}
+                        onClick={() => adjustReps(index, -1)}
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <input
+                        type="number"
+                        style={{
+                          width: '100%',
+                          padding: '6px 2px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: 6,
+                          fontSize: 14,
+                          fontWeight: 600,
+                          textAlign: 'center',
+                        }}
+                        value={set.reps}
+                        onChange={e => updateSet(index, 'reps', Number(e.target.value))}
+                      />
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: 2, minWidth: 24, fontSize: 12 }}
+                        onClick={() => adjustReps(index, 1)}
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Complete button */}
+                  <button
+                    className={`btn ${set.completed ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{
+                      padding: 6,
+                      height: 40,
+                      width: 44,
+                      marginTop: 14,
+                      borderRadius: 10,
+                    }}
+                    onClick={() => toggleSetComplete(index)}
+                  >
+                    <Check size={18} />
+                  </button>
+
+                  {/* Delete set button */}
+                  <button
+                    className="btn btn-ghost"
+                    style={{ padding: 4, marginTop: 14, opacity: 0.5 }}
+                    onClick={() => removeSet(index)}
+                    disabled={currentLog.sets.length <= 1}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Rest Timer */}
+        <div style={{
+          background: timerRunning ? '#6366f1' : '#f3f4f6',
+          borderRadius: 16,
+          padding: 16,
+          marginBottom: 20,
+          color: timerRunning ? 'white' : '#374151',
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>REST TIMER</div>
+            <div style={{ fontSize: 42, fontWeight: 700, fontFamily: 'monospace' }}>
+              {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => adjustTimer(-15)}
+              style={{ background: timerRunning ? 'rgba(255,255,255,0.2)' : undefined }}
+            >
+              -15s
             </button>
-          ) : (
-            <button className="btn btn-secondary btn-sm" onClick={pauseTimer} style={{ background: 'rgba(255,255,255,0.2)' }}>
-              <Pause size={16} /> Pause
+            {!timerRunning ? (
+              <button className="btn btn-secondary btn-sm" onClick={startTimer}>
+                <Play size={16} /> Start
+              </button>
+            ) : (
+              <button className="btn btn-secondary btn-sm" onClick={pauseTimer} style={{ background: 'rgba(255,255,255,0.2)' }}>
+                <Pause size={16} /> Pause
+              </button>
+            )}
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={resetTimer}
+              style={{ background: timerRunning ? 'rgba(255,255,255,0.2)' : undefined }}
+            >
+              <RotateCcw size={16} />
             </button>
-          )}
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={resetTimer}
-            style={{ background: timerRunning ? 'rgba(255,255,255,0.2)' : undefined }}
-          >
-            <RotateCcw size={16} />
-          </button>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => adjustTimer(15)}
-            style={{ background: timerRunning ? 'rgba(255,255,255,0.2)' : undefined }}
-          >
-            +15s
-          </button>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => adjustTimer(15)}
+              style={{ background: timerRunning ? 'rgba(255,255,255,0.2)' : undefined }}
+            >
+              +15s
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Finish button */}
-      <button
-        className="btn btn-primary btn-block"
-        onClick={finishWorkout}
-        disabled={!allExercisesComplete}
-        style={{
-          opacity: allExercisesComplete ? 1 : 0.5,
-          padding: 16,
-          fontSize: 16,
-          fontWeight: 600,
-        }}
-      >
-        {allExercisesComplete ? 'Finish Workout' : 'Complete all sets to finish'}
-      </button>
+      {/* Finish button - only show when ready */}
+      {canFinish && (
+        <button
+          className="btn btn-primary btn-block"
+          onClick={finishWorkout}
+          style={{
+            padding: 16,
+            fontSize: 16,
+            fontWeight: 600,
+          }}
+        >
+          Finish Workout
+        </button>
+      )}
+
+      {/* Swipe hint */}
+      <div style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 12 }}>
+        Swipe left/right to change exercise
+      </div>
 
       {/* Effort Rating Modal */}
       {showEffortModal && pendingEffortExerciseIndex !== null && (
@@ -612,7 +740,8 @@ export default function ActiveWorkout() {
               <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
               <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Workout Complete!</h2>
               <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
-                Duration: {formatTime(elapsedTime)} • {exerciseLogs.length} exercises
+                Duration: {formatTime(elapsedTime)} • {exerciseLogs.length - skippedExercises.size} exercises
+                {skippedExercises.size > 0 && ` (${skippedExercises.size} skipped)`}
               </p>
             </div>
 
