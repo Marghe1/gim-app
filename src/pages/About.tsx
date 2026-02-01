@@ -59,7 +59,7 @@ export default function About() {
         fontSize: 12,
         color: '#d1d5db',
       }}>
-        2024
+        2026
       </div>
     </div>
   );
