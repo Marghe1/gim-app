@@ -38,6 +38,7 @@ export type ExerciseLog = {
   exerciseName: string;
   sets: SetLog[];
   effortRating?: number;       // 1-5 rating of perceived effort
+  note?: string;               // Personal note for this exercise in this workout
 };
 
 export type WorkoutLog = {
@@ -165,7 +166,22 @@ export function getExercises(): Exercise[] {
     localStorage.setItem(EXERCISES_KEY, JSON.stringify(defaultExercises));
     return defaultExercises;
   }
-  return JSON.parse(data);
+
+  // Parse stored exercises
+  const storedExercises: Exercise[] = JSON.parse(data);
+
+  // Check if any default exercises are missing and add them
+  // This handles the case where new exercises were added after the user first loaded the app
+  const storedIds = new Set(storedExercises.map(e => e.id));
+  const missingExercises = defaultExercises.filter(e => !storedIds.has(e.id));
+
+  if (missingExercises.length > 0) {
+    const mergedExercises = [...storedExercises, ...missingExercises];
+    localStorage.setItem(EXERCISES_KEY, JSON.stringify(mergedExercises));
+    return mergedExercises;
+  }
+
+  return storedExercises;
 }
 
 export function saveExercise(exercise: Exercise): void {
@@ -303,6 +319,22 @@ export function getLastWeightForExercise(exerciseId: string): number | null {
       if (completedSets.length > 0) {
         return Math.max(...completedSets.map(s => s.weight));
       }
+    }
+  }
+  return null;
+}
+
+// Get the last note for a specific exercise
+export function getLastNoteForExercise(exerciseId: string): string | null {
+  const logs = getWorkoutLogs();
+  // Sort by date, newest first
+  logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  for (const log of logs) {
+    if (!log.completed) continue;
+    const exerciseLog = log.exercises.find(e => e.exerciseId === exerciseId);
+    if (exerciseLog && exerciseLog.note) {
+      return exerciseLog.note;
     }
   }
   return null;

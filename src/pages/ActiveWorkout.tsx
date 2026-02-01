@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, Play, Pause, RotateCcw, Check, Minus, Plus, Clock, SkipForward, Trash2 } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, Check, Minus, Plus, Clock, SkipForward, Trash2, MessageSquare } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutLog, ExerciseLog, SetLog } from '../utils/storage';
 import {
@@ -8,6 +8,7 @@ import {
   saveWorkoutLog,
   getExercises,
   getLastWeightForExercise,
+  getLastNoteForExercise,
   getProgressionSuggestions,
   type ProgressionSuggestion,
 } from '../utils/storage';
@@ -41,6 +42,8 @@ export default function ActiveWorkout() {
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const touchEndY = useRef<number>(0);
 
   // Skipped exercises
   const [skippedExercises, setSkippedExercises] = useState<Set<number>>(new Set());
@@ -52,6 +55,11 @@ export default function ActiveWorkout() {
   // Workout complete modal
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [suggestions, setSuggestions] = useState<ProgressionSuggestion[]>([]);
+
+  // Note modal
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [currentNoteText, setCurrentNoteText] = useState('');
+  const [previousNotes, setPreviousNotes] = useState<{ [exerciseId: string]: string | null }>({});
 
   // Elapsed time counter
   useEffect(() => {
@@ -69,6 +77,13 @@ export default function ActiveWorkout() {
 
       // Get exercise library for default weights
       const allExercises = getExercises();
+
+      // Load previous notes for all exercises
+      const notes: { [exerciseId: string]: string | null } = {};
+      found.exercises.forEach(ex => {
+        notes[ex.exerciseId] = getLastNoteForExercise(ex.exerciseId);
+      });
+      setPreviousNotes(notes);
 
       // Initialize exercise logs with smart weight pre-fill
       const logs: ExerciseLog[] = found.exercises.map(ex => {
@@ -161,18 +176,26 @@ export default function ActiveWorkout() {
   // Touch handlers for swipe
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    touchEndX.current = e.touches[0].clientX;
+    touchEndY.current = e.touches[0].clientY;
   }
 
   function handleTouchMove(e: React.TouchEvent) {
     touchEndX.current = e.touches[0].clientX;
+    touchEndY.current = e.touches[0].clientY;
   }
 
   function handleTouchEnd() {
-    const diff = touchStartX.current - touchEndX.current;
-    const threshold = 50;
+    const diffX = touchStartX.current - touchEndX.current;
+    const diffY = touchStartY.current - touchEndY.current;
+    const threshold = 80; // Increased threshold for more deliberate swipes
 
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) {
+    // Only trigger swipe if:
+    // 1. Horizontal movement exceeds threshold
+    // 2. Horizontal movement is greater than vertical (it's a horizontal swipe, not scroll)
+    if (Math.abs(diffX) > threshold && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+      if (diffX > 0) {
         goNext();
       } else {
         goPrevious();
@@ -289,6 +312,23 @@ export default function ActiveWorkout() {
     if (currentExerciseIndex < workout!.exercises.length - 1) {
       setTimeout(() => goNext(), 100);
     }
+  }
+
+  function openNoteModal() {
+    const existingNote = exerciseLogs[currentExerciseIndex]?.note || '';
+    setCurrentNoteText(existingNote);
+    setShowNoteModal(true);
+  }
+
+  function saveNote() {
+    const newLogs = [...exerciseLogs];
+    newLogs[currentExerciseIndex].note = currentNoteText.trim() || undefined;
+    setExerciseLogs(newLogs);
+    setShowNoteModal(false);
+  }
+
+  function clearNote() {
+    setCurrentNoteText('');
   }
 
   function startTimer() {
@@ -437,7 +477,33 @@ export default function ActiveWorkout() {
           marginBottom: 16,
           color: isCurrentSkipped ? '#6b7280' : 'white',
           textAlign: 'center',
+          position: 'relative',
         }}>
+          {/* Note button - top right */}
+          {!isCurrentSkipped && (
+            <button
+              onClick={openNoteModal}
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                background: currentLog?.note ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: 8,
+                padding: 8,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <MessageSquare size={18} style={{ color: 'white' }} />
+              {currentLog?.note && (
+                <span style={{ fontSize: 10, color: 'white' }}>1</span>
+              )}
+            </button>
+          )}
+
           <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>
             Exercise {currentExerciseIndex + 1} of {workout.exercises.length}
           </div>
@@ -448,6 +514,23 @@ export default function ActiveWorkout() {
           <div style={{ fontSize: 14, opacity: 0.9 }}>
             Target: {currentExercise?.targetSets} × {currentExercise?.targetReps} reps
           </div>
+
+          {/* Previous note hint */}
+          {!isCurrentSkipped && previousNotes[currentExercise?.exerciseId] && !currentLog?.note && (
+            <div style={{
+              marginTop: 12,
+              padding: 8,
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: 8,
+              fontSize: 12,
+              textAlign: 'left',
+            }}>
+              <div style={{ opacity: 0.7, marginBottom: 2 }}>Last note:</div>
+              <div style={{ fontStyle: 'italic' }}>
+                "{previousNotes[currentExercise.exerciseId]}"
+              </div>
+            </div>
+          )}
 
           {/* Skip/Unskip button */}
           <div style={{ marginTop: 12 }}>
@@ -778,6 +861,87 @@ export default function ActiveWorkout() {
             <button className="btn btn-primary btn-block" onClick={goToHistory}>
               View in History
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Note Modal */}
+      {showNoteModal && (
+        <div
+          className="modal-overlay"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          onClick={() => setShowNoteModal(false)}
+        >
+          <div
+            className="modal"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: 360 }}
+          >
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
+                Note for {currentLog?.exerciseName}
+              </h2>
+              <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+                Leave a note for your future self
+              </p>
+            </div>
+
+            {/* Show previous note if exists */}
+            {previousNotes[currentExercise?.exerciseId] && (
+              <div style={{
+                padding: 10,
+                background: '#f3f4f6',
+                borderRadius: 8,
+                marginBottom: 12,
+                fontSize: 13,
+              }}>
+                <div style={{ color: '#6b7280', marginBottom: 4 }}>Previous note:</div>
+                <div style={{ fontStyle: 'italic' }}>
+                  "{previousNotes[currentExercise.exerciseId]}"
+                </div>
+              </div>
+            )}
+
+            <textarea
+              value={currentNoteText}
+              onChange={e => setCurrentNoteText(e.target.value)}
+              placeholder="e.g., 'Felt strong today', 'Watch left knee', 'Try 5kg more next time'"
+              style={{
+                width: '100%',
+                padding: 12,
+                border: '1px solid #d1d5db',
+                borderRadius: 8,
+                fontSize: 14,
+                minHeight: 100,
+                resize: 'vertical',
+                fontFamily: 'inherit',
+              }}
+              autoFocus
+            />
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button
+                className="btn btn-ghost"
+                onClick={clearNote}
+                style={{ flex: 0 }}
+              >
+                Clear
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowNoteModal(false)}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={saveNote}
+                style={{ flex: 1 }}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}
