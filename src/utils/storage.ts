@@ -4,6 +4,8 @@ export type Exercise = {
   name: string;
   muscleGroup: string;
   notes?: string;
+  defaultWeight?: number;      // Starting weight in kg
+  weightIncrement?: number;    // How much to increase (default 2.5kg)
 };
 
 export type WorkoutExercise = {
@@ -35,6 +37,7 @@ export type ExerciseLog = {
   exerciseId: string;
   exerciseName: string;
   sets: SetLog[];
+  effortRating?: number;       // 1-5 rating of perceived effort
 };
 
 export type WorkoutLog = {
@@ -283,4 +286,137 @@ const workoutTemplates: WorkoutTemplate[] = [
 
 export function getWorkoutTemplates(): WorkoutTemplate[] {
   return workoutTemplates;
+}
+
+// Get the last used weight for a specific exercise
+export function getLastWeightForExercise(exerciseId: string): number | null {
+  const logs = getWorkoutLogs();
+  // Sort by date, newest first
+  logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  for (const log of logs) {
+    if (!log.completed) continue;
+    const exerciseLog = log.exercises.find(e => e.exerciseId === exerciseId);
+    if (exerciseLog) {
+      // Get the max weight used in any completed set
+      const completedSets = exerciseLog.sets.filter(s => s.completed && s.weight > 0);
+      if (completedSets.length > 0) {
+        return Math.max(...completedSets.map(s => s.weight));
+      }
+    }
+  }
+  return null;
+}
+
+// Get exercise history for charts and analysis
+export type ExerciseHistoryEntry = {
+  date: string;
+  weight: number;
+  reps: number;
+  effortRating?: number;
+};
+
+export function getExerciseHistory(exerciseId: string): ExerciseHistoryEntry[] {
+  const logs = getWorkoutLogs();
+  const history: ExerciseHistoryEntry[] = [];
+
+  // Sort by date, oldest first for charts
+  logs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  for (const log of logs) {
+    if (!log.completed) continue;
+    const exerciseLog = log.exercises.find(e => e.exerciseId === exerciseId);
+    if (exerciseLog) {
+      const completedSets = exerciseLog.sets.filter(s => s.completed && s.weight > 0);
+      if (completedSets.length > 0) {
+        const maxWeight = Math.max(...completedSets.map(s => s.weight));
+        const maxReps = Math.max(...completedSets.map(s => s.reps));
+        history.push({
+          date: log.date,
+          weight: maxWeight,
+          reps: maxReps,
+          effortRating: exerciseLog.effortRating,
+        });
+      }
+    }
+  }
+  return history;
+}
+
+// Get average effort rating for an exercise (last N sessions)
+export function getAverageEffort(exerciseId: string, lastN: number = 3): number | null {
+  const history = getExerciseHistory(exerciseId);
+  const withRatings = history.filter(h => h.effortRating !== undefined);
+
+  if (withRatings.length === 0) return null;
+
+  const recent = withRatings.slice(-lastN);
+  const sum = recent.reduce((acc, h) => acc + (h.effortRating || 0), 0);
+  return sum / recent.length;
+}
+
+// Weight progression suggestion based on effort ratings
+export type ProgressionSuggestion = {
+  exerciseId: string;
+  exerciseName: string;
+  currentWeight: number;
+  suggestedWeight: number;
+  reason: 'increase' | 'maintain' | 'decrease';
+  message: string;
+};
+
+export function getProgressionSuggestions(exerciseLogs: ExerciseLog[]): ProgressionSuggestion[] {
+  const suggestions: ProgressionSuggestion[] = [];
+  const exercises = getExercises();
+
+  for (const log of exerciseLogs) {
+    const exercise = exercises.find(e => e.id === log.exerciseId);
+    const increment = exercise?.weightIncrement || 2.5;
+    const avgEffort = getAverageEffort(log.exerciseId, 3);
+
+    // Get the weight used in this workout
+    const completedSets = log.sets.filter(s => s.completed && s.weight > 0);
+    if (completedSets.length === 0) continue;
+
+    const currentWeight = Math.max(...completedSets.map(s => s.weight));
+
+    // Need at least some effort data
+    if (avgEffort === null && log.effortRating === undefined) continue;
+
+    const effort = avgEffort !== null ? avgEffort : (log.effortRating || 3);
+
+    if (effort <= 2.5) {
+      // Easy - suggest increase
+      suggestions.push({
+        exerciseId: log.exerciseId,
+        exerciseName: log.exerciseName,
+        currentWeight,
+        suggestedWeight: currentWeight + increment,
+        reason: 'increase',
+        message: `Try ${currentWeight + increment}kg next time (+${increment}kg)`,
+      });
+    } else if (effort >= 4.5) {
+      // Very hard - suggest decrease or maintain
+      suggestions.push({
+        exerciseId: log.exerciseId,
+        exerciseName: log.exerciseName,
+        currentWeight,
+        suggestedWeight: currentWeight,
+        reason: 'decrease',
+        message: `Keep at ${currentWeight}kg or reduce if needed`,
+      });
+    } else {
+      // Moderate - maintain
+      suggestions.push({
+        exerciseId: log.exerciseId,
+        exerciseName: log.exerciseName,
+        currentWeight,
+        suggestedWeight: currentWeight,
+        reason: 'maintain',
+        message: `Good challenge level at ${currentWeight}kg`,
+      });
+    }
+  }
+
+  return suggestions;
 }

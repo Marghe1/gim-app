@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Plus, Pencil, Trash2, X, ChevronRight } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import type { Exercise } from '../utils/storage';
 import { getExercises, saveExercise, deleteExercise } from '../utils/storage';
 
-const MUSCLE_GROUPS = ['All', 'Legs', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core', 'Full Body'];
+const MUSCLE_GROUPS = ['All', 'Legs', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core', 'Full Body', 'Warm-up', 'Glutes', 'Cardio', 'Plyometrics'];
 
 export default function Exercises() {
+  const navigate = useNavigate();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
@@ -104,18 +106,33 @@ export default function Exercises() {
 
       <div className="list">
         {filteredExercises.map(exercise => (
-          <div key={exercise.id} className="list-item">
+          <div
+            key={exercise.id}
+            className="list-item"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate(`/exercise/${exercise.id}`)}
+          >
             <div className="list-item-content">
               <div className="list-item-title">{exercise.name}</div>
-              <div className="list-item-subtitle">{exercise.muscleGroup}</div>
+              <div className="list-item-subtitle">
+                {exercise.muscleGroup}
+                {exercise.defaultWeight && ` • ${exercise.defaultWeight}kg`}
+              </div>
             </div>
             <div className="list-item-actions">
-              <button className="btn btn-ghost" onClick={() => openEditModal(exercise)}>
+              <button
+                className="btn btn-ghost"
+                onClick={(e) => { e.stopPropagation(); openEditModal(exercise); }}
+              >
                 <Pencil size={18} />
               </button>
-              <button className="btn btn-ghost" onClick={() => handleDelete(exercise.id)}>
+              <button
+                className="btn btn-ghost"
+                onClick={(e) => { e.stopPropagation(); handleDelete(exercise.id); }}
+              >
                 <Trash2 size={18} />
               </button>
+              <ChevronRight size={18} style={{ color: '#9ca3af' }} />
             </div>
           </div>
         ))}
