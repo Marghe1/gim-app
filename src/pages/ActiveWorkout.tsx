@@ -159,25 +159,41 @@ export default function ActiveWorkout() {
   }
 
   // Touch handlers for swipe
+  const touchStartY = useRef<number>(0);
+  const isSwiping = useRef<boolean>(false);
+
   function handleTouchStart(e: React.TouchEvent) {
+    // Don't start swipe if touching interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input')) {
+      isSwiping.current = false;
+      return;
+    }
     touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    touchEndX.current = e.touches[0].clientX;
+    isSwiping.current = true;
   }
 
   function handleTouchMove(e: React.TouchEvent) {
+    if (!isSwiping.current) return;
     touchEndX.current = e.touches[0].clientX;
   }
 
   function handleTouchEnd() {
-    const diff = touchStartX.current - touchEndX.current;
-    const threshold = 50;
+    if (!isSwiping.current) return;
 
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) {
+    const diffX = touchStartX.current - touchEndX.current;
+    const threshold = 80; // Increased threshold for more deliberate swipes
+
+    if (Math.abs(diffX) > threshold) {
+      if (diffX > 0) {
         goNext();
       } else {
         goPrevious();
       }
     }
+    isSwiping.current = false;
   }
 
   function updateSet(setIndex: number, field: 'weight' | 'reps', value: number) {

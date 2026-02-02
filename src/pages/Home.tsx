@@ -73,7 +73,7 @@ export default function Home() {
   return (
     <div className="page">
       <div className="welcome-card">
-        <h2>Welcome to GymTrack</h2>
+        <h2>Welcome to Gim app</h2>
         <p>Track your circuit training and see your progress over time.</p>
       </div>
 

@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'GymTrack - Workout Tracker',
-        short_name: 'GymTrack',
+        name: 'Gim app - Workout Tracker',
+        short_name: 'Gim app',
         description: 'Track your circuit training workouts and progress',
         theme_color: '#6366f1',
         background_color: '#ffffff',
