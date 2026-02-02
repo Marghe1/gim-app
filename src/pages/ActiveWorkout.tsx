@@ -44,6 +44,7 @@ export default function ActiveWorkout() {
   const touchEndX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
+  const isSwiping = useRef<boolean>(false);
 
   // Skipped exercises
   const [skippedExercises, setSkippedExercises] = useState<Set<number>>(new Set());
@@ -172,9 +173,6 @@ export default function ActiveWorkout() {
       goToExercise(currentExerciseIndex - 1);
     }
   }
-
-  // Touch handlers for swipe
-  const isSwiping = useRef<boolean>(false);
 
   function handleTouchStart(e: React.TouchEvent) {
     // Don't start swipe if touching interactive elements
