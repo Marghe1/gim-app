@@ -442,6 +442,22 @@ export function getLastWeightForExercise(exerciseId: string): number | null {
   return null;
 }
 
+// Get this exercise's performance from the most recent completed workout of the
+// same type (same workout template). Used to suggest weights/reps/time.
+export function getLastSameWorkoutPerformance(workoutId: string, exerciseId: string): ExerciseLog | null {
+  const logs = getWorkoutLogs();
+  // Sort by date, newest first
+  logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  for (const log of logs) {
+    if (!log.completed) continue;
+    if (log.workoutId !== workoutId) continue;
+    const exerciseLog = log.exercises.find(e => e.exerciseId === exerciseId);
+    if (exerciseLog) return exerciseLog;
+  }
+  return null;
+}
+
 // Get the personal best (max weight and max reps) for an exercise across all
 // completed workouts. Used to detect new records during a workout.
 export function getExercisePersonalBest(exerciseId: string): { maxWeight: number; maxReps: number } {

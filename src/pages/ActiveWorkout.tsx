@@ -10,6 +10,7 @@ import {
   getLastWeightForExercise,
   getLastNoteForExercise,
   getExercisePersonalBest,
+  getLastSameWorkoutPerformance,
   getProgressionSuggestions,
   type ProgressionSuggestion,
 } from '../utils/storage';
@@ -67,6 +68,9 @@ export default function ActiveWorkout() {
   const [currentNoteText, setCurrentNoteText] = useState('');
   const [previousNotes, setPreviousNotes] = useState<{ [exerciseId: string]: string | null }>({});
 
+  // Last performance for each exercise from the previous workout of the same type
+  const [lastPerformance, setLastPerformance] = useState<{ [exerciseId: string]: ExerciseLog | null }>({});
+
   // Personal-best records (snapshot taken before this workout). Mutated in-place
   // as new records are hit so later sets compare against the running best.
   const personalBests = useRef<{ [exerciseId: string]: { maxWeight: number; maxReps: number } }>({});
@@ -104,27 +108,38 @@ export default function ActiveWorkout() {
       });
       personalBests.current = bests;
 
-      // Initialize exercise logs with smart weight pre-fill
+      // Load last performance from the previous workout of the same type
+      const perf: { [exerciseId: string]: ExerciseLog | null } = {};
+      found.exercises.forEach(ex => {
+        perf[ex.exerciseId] = getLastSameWorkoutPerformance(found.id, ex.exerciseId);
+      });
+      setLastPerformance(perf);
+
+      // Initialize exercise logs with smart weight/reps pre-fill
       const logs: ExerciseLog[] = found.exercises.map(ex => {
-        // Try to get last used weight
-        const lastWeight = getLastWeightForExercise(ex.exerciseId);
+        const lastPerf = perf[ex.exerciseId];
 
         // Get default weight from exercise library
         const exerciseData = allExercises.find(e => e.id === ex.exerciseId);
         const defaultWeight = exerciseData?.defaultWeight ?? 0;
 
-        // Use last weight if available, otherwise default weight
-        const prefillWeight = lastWeight !== null ? lastWeight : defaultWeight;
+        // Fallback weight: last weight used anywhere, otherwise the default
+        const lastWeight = getLastWeightForExercise(ex.exerciseId);
+        const fallbackWeight = lastWeight !== null ? lastWeight : defaultWeight;
 
         return {
           exerciseId: ex.exerciseId,
           exerciseName: ex.exerciseName,
-          sets: Array.from({ length: ex.targetSets }, (_, i) => ({
-            setNumber: i + 1,
-            reps: ex.targetReps,
-            weight: prefillWeight,
-            completed: false,
-          })),
+          sets: Array.from({ length: ex.targetSets }, (_, i) => {
+            // Prefer the matching set from last same-type workout
+            const prev = lastPerf?.sets[i];
+            return {
+              setNumber: i + 1,
+              reps: prev?.reps ?? ex.targetReps,
+              weight: prev?.weight ?? fallbackWeight,
+              completed: false,
+            };
+          }),
         };
       });
       setExerciseLogs(logs);
@@ -796,6 +811,17 @@ export default function ActiveWorkout() {
                   >
                     <Trash2 size={14} />
                   </button>
+
+                  {/* Last time hint */}
+                  {(() => {
+                    const prev = lastPerformance[currentExercise?.exerciseId]?.sets[index];
+                    if (!prev) return null;
+                    return (
+                      <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
+                        Last time: {prev.weight > 0 ? `${prev.weight}kg × ${prev.reps}` : `${prev.reps}`}
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
