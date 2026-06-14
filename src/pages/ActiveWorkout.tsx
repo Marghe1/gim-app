@@ -517,11 +517,12 @@ export default function ActiveWorkout() {
                 right: 12,
                 background: currentLog?.note ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
                 border: 'none',
-                borderRadius: 8,
-                padding: 8,
+                borderRadius: 10,
+                padding: 16,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: 4,
               }}
             >
