@@ -58,8 +58,10 @@ export default function About() {
         marginTop: 32,
         fontSize: 12,
         color: '#d1d5db',
+        lineHeight: 1.8,
       }}>
-        2026
+        <div>2026</div>
+        <div>Version: {__BUILD_TIME__}</div>
       </div>
     </div>
   );
