@@ -9,6 +9,7 @@ import {
   getExercises,
   getLastWeightForExercise,
   getLastNoteForExercise,
+  getExercisePersonalBest,
   getProgressionSuggestions,
   type ProgressionSuggestion,
 } from '../utils/storage';
@@ -66,6 +67,12 @@ export default function ActiveWorkout() {
   const [currentNoteText, setCurrentNoteText] = useState('');
   const [previousNotes, setPreviousNotes] = useState<{ [exerciseId: string]: string | null }>({});
 
+  // Personal-best records (snapshot taken before this workout). Mutated in-place
+  // as new records are hit so later sets compare against the running best.
+  const personalBests = useRef<{ [exerciseId: string]: { maxWeight: number; maxReps: number } }>({});
+  const [recordMessage, setRecordMessage] = useState<string | null>(null);
+  const recordTimeoutRef = useRef<number | null>(null);
+
   // Elapsed time counter
   useEffect(() => {
     const interval = setInterval(() => {
@@ -89,6 +96,13 @@ export default function ActiveWorkout() {
         notes[ex.exerciseId] = getLastNoteForExercise(ex.exerciseId);
       });
       setPreviousNotes(notes);
+
+      // Snapshot personal bests before the workout starts
+      const bests: { [exerciseId: string]: { maxWeight: number; maxReps: number } } = {};
+      found.exercises.forEach(ex => {
+        bests[ex.exerciseId] = getExercisePersonalBest(ex.exerciseId);
+      });
+      personalBests.current = bests;
 
       // Initialize exercise logs with smart weight pre-fill
       const logs: ExerciseLog[] = found.exercises.map(ex => {
@@ -238,11 +252,35 @@ export default function ActiveWorkout() {
     setExerciseLogs(newLogs);
   }
 
+  function showRecord(message: string) {
+    setRecordMessage(message);
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    if (recordTimeoutRef.current) clearTimeout(recordTimeoutRef.current);
+    recordTimeoutRef.current = window.setTimeout(() => setRecordMessage(null), 4000);
+  }
+
   function toggleSetComplete(setIndex: number) {
     const newLogs = [...exerciseLogs];
     const set = newLogs[currentExerciseIndex].sets[setIndex];
     set.completed = !set.completed;
     setExerciseLogs(newLogs);
+
+    // Celebrate a new personal record when completing a set
+    if (set.completed && currentExercise) {
+      const pb = personalBests.current[currentExercise.exerciseId];
+      if (pb) {
+        if (set.weight > 0 && pb.maxWeight > 0 && set.weight > pb.maxWeight) {
+          const delta = set.weight - pb.maxWeight;
+          const deltaStr = delta % 1 === 0 ? `${delta}` : delta.toFixed(1);
+          showRecord(`🏆 New record! +${deltaStr} kg`);
+          pb.maxWeight = set.weight;
+        } else if (set.weight === 0 && pb.maxReps > 0 && set.reps > pb.maxReps) {
+          const delta = set.reps - pb.maxReps;
+          showRecord(`🏆 New record! +${delta}`);
+          pb.maxReps = set.reps;
+        }
+      }
+    }
 
     // Start rest timer when completing a set
     if (set.completed && currentExercise) {
@@ -438,6 +476,30 @@ export default function ActiveWorkout() {
 
   return (
     <div className="page" style={{ paddingBottom: 100, overflow: 'hidden' }}>
+      {/* New record toast */}
+      {recordMessage && (
+        <div
+          onClick={() => setRecordMessage(null)}
+          style={{
+            position: 'fixed',
+            top: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+            color: 'white',
+            padding: '12px 22px',
+            borderRadius: 999,
+            fontWeight: 700,
+            fontSize: 15,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            zIndex: 1000,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {recordMessage}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{
         display: 'flex',

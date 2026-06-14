@@ -442,6 +442,27 @@ export function getLastWeightForExercise(exerciseId: string): number | null {
   return null;
 }
 
+// Get the personal best (max weight and max reps) for an exercise across all
+// completed workouts. Used to detect new records during a workout.
+export function getExercisePersonalBest(exerciseId: string): { maxWeight: number; maxReps: number } {
+  const logs = getWorkoutLogs();
+  let maxWeight = 0;
+  let maxReps = 0;
+
+  for (const log of logs) {
+    if (!log.completed) continue;
+    const exerciseLog = log.exercises.find(e => e.exerciseId === exerciseId);
+    if (!exerciseLog) continue;
+    for (const set of exerciseLog.sets) {
+      if (!set.completed) continue;
+      if (set.weight > maxWeight) maxWeight = set.weight;
+      if (set.reps > maxReps) maxReps = set.reps;
+    }
+  }
+
+  return { maxWeight, maxReps };
+}
+
 // Get the last note for a specific exercise
 export function getLastNoteForExercise(exerciseId: string): string | null {
   const logs = getWorkoutLogs();
