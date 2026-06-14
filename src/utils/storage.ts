@@ -82,7 +82,7 @@ const defaultExercises: Exercise[] = [
   { id: '7', name: 'Lunges', muscleGroup: 'Legs' },
   { id: '8', name: 'Dumbbell Curl', muscleGroup: 'Arms' },
   { id: '9', name: 'Tricep Dips', muscleGroup: 'Arms' },
-  { id: '10', name: 'Plank', muscleGroup: 'Core' },
+  { id: '10', name: 'Plank', muscleGroup: 'Core', isTimed: true },
   { id: '11', name: 'Russian Twist', muscleGroup: 'Core' },
   { id: '12', name: 'Leg Press', muscleGroup: 'Legs' },
   { id: '13', name: 'Lat Pulldown', muscleGroup: 'Back' },
@@ -100,7 +100,7 @@ const defaultExercises: Exercise[] = [
   { id: '24', name: 'Heel Drops', muscleGroup: 'Warm-up' },
   { id: '25', name: 'Pike Lifts', muscleGroup: 'Core' },
   { id: '26', name: 'Kettlebell Pullthrough', muscleGroup: 'Glutes' },
-  { id: '27', name: 'Hollow Body Hold', muscleGroup: 'Core' },
+  { id: '27', name: 'Hollow Body Hold', muscleGroup: 'Core', isTimed: true },
   { id: '28', name: 'Romanian Deadlift', muscleGroup: 'Legs' },
   { id: '29', name: 'Bulgarian Split Squat', muscleGroup: 'Legs' },
   { id: '30', name: 'Hip Thrust', muscleGroup: 'Glutes' },
@@ -111,7 +111,7 @@ const defaultExercises: Exercise[] = [
   { id: '35', name: 'Prone Scorpion', muscleGroup: 'Warm-up' },
   { id: '36', name: 'Thoracic Rotations', muscleGroup: 'Warm-up' },
   { id: '37', name: 'Walking Lunge with Rotation', muscleGroup: 'Legs' },
-  { id: '38', name: 'Copenhagen Plank', muscleGroup: 'Core' },
+  { id: '38', name: 'Copenhagen Plank', muscleGroup: 'Core', isTimed: true },
   { id: '39', name: 'Overhead March', muscleGroup: 'Core' },
   { id: '40', name: 'Drop Jump', muscleGroup: 'Plyometrics' },
   { id: '41', name: 'Counter Movement Jump', muscleGroup: 'Plyometrics' },
@@ -120,7 +120,7 @@ const defaultExercises: Exercise[] = [
   { id: '44', name: 'Wall Ball Shots', muscleGroup: 'Full Body' },
   { id: '45', name: 'Suspended Row', muscleGroup: 'Back' },
   { id: '46', name: 'Glute Bridge', muscleGroup: 'Glutes' },
-  { id: '47', name: 'Side Plank', muscleGroup: 'Core' },
+  { id: '47', name: 'Side Plank', muscleGroup: 'Core', isTimed: true },
   { id: '48', name: 'Shoulder Press', muscleGroup: 'Shoulders' },
   { id: '49', name: 'Incline Walk', muscleGroup: 'Cardio' },
   { id: '50', name: 'Kettlebell Windmill', muscleGroup: 'Core' },
@@ -133,7 +133,7 @@ const defaultExercises: Exercise[] = [
   { id: '57', name: 'Flat Bench Press', muscleGroup: 'Chest' },
   // Additional exercises from PT screenshots
   { id: '58', name: 'Single Leg Glute Bridge', muscleGroup: 'Glutes' },
-  { id: '59', name: 'Forward to Side Plank', muscleGroup: 'Core' },
+  { id: '59', name: 'Forward to Side Plank', muscleGroup: 'Core', isTimed: true },
   { id: '60', name: 'Unilateral Cable Lat Pulldown', muscleGroup: 'Back' },
   { id: '61', name: 'Elevated Push-Up', muscleGroup: 'Chest' },
   { id: '62', name: 'Single Leg Hip Thrust', muscleGroup: 'Glutes' },
@@ -141,22 +141,22 @@ const defaultExercises: Exercise[] = [
   { id: '64', name: 'Chest Ball Slam', muscleGroup: 'Full Body' },
   // B & C session exercises
   { id: '65', name: 'Straight Leg Bridge on Swiss Ball', muscleGroup: 'Glutes' },
-  { id: '66', name: 'Single Leg Glute Bridge Hold', muscleGroup: 'Glutes' },
-  { id: '67', name: 'Single Leg Balance with Kettlebell Round the World', muscleGroup: 'Core' },
+  { id: '66', name: 'Single Leg Glute Bridge Hold', muscleGroup: 'Glutes', isTimed: true },
+  { id: '67', name: 'Single Leg Balance with Kettlebell Round the World', muscleGroup: 'Core', isTimed: true },
   { id: '68', name: 'Dumbbell Single Leg Romanian Deadlift', muscleGroup: 'Legs' },
-  { id: '69', name: 'Split Squat Hold with Kettlebell Pass Around', muscleGroup: 'Legs' },
+  { id: '69', name: 'Split Squat Hold with Kettlebell Pass Around', muscleGroup: 'Legs', isTimed: true },
   { id: '70', name: 'Single Leg Drop Jump with Stabilisation', muscleGroup: 'Plyometrics' },
   { id: '71', name: 'Box Step-Up', muscleGroup: 'Legs' },
   { id: '72', name: 'Pullover Crunch to Wall Throw', muscleGroup: 'Core' },
   { id: '73', name: "Landmine Meadow's Row to Power Press", muscleGroup: 'Full Body' },
   { id: '74', name: 'Farmers Walk', muscleGroup: 'Full Body' },
-  { id: '75', name: 'Forward Plank on Swiss Ball', muscleGroup: 'Core' },
+  { id: '75', name: 'Forward Plank on Swiss Ball', muscleGroup: 'Core', isTimed: true },
   { id: '76', name: 'Side Plank Clamshell', muscleGroup: 'Core' },
-  { id: '77', name: 'Arch Body Hold', muscleGroup: 'Core' },
+  { id: '77', name: 'Arch Body Hold', muscleGroup: 'Core', isTimed: true },
   { id: '78', name: 'Pogo Hop', muscleGroup: 'Plyometrics' },
   { id: '79', name: 'Drop Jump to Counter Movement Jump with Stabilisation', muscleGroup: 'Plyometrics' },
   { id: '80', name: 'Glute Bridge March', muscleGroup: 'Glutes' },
-  { id: '81', name: 'Single Leg Balance on Upturned Bosu', muscleGroup: 'Core' },
+  { id: '81', name: 'Single Leg Balance on Upturned Bosu', muscleGroup: 'Core', isTimed: true },
   { id: '82', name: 'Single Leg Step Down', muscleGroup: 'Legs' },
   { id: '83', name: 'Deficit Bulgarian Split Squat', muscleGroup: 'Legs' },
 ];
@@ -203,25 +203,44 @@ export function deleteWorkoutLog(id: string): void {
   localStorage.setItem(WORKOUT_LOGS_KEY, JSON.stringify(logs));
 }
 
+// Default exercise ids that should be marked time-based (planks, holds,
+// balance work). Used for a one-time migration of existing stored data.
+const DEFAULT_TIMED_IDS = ['10', '27', '38', '47', '59', '66', '67', '69', '75', '77', '81'];
+const TIMED_MIGRATION_KEY = 'gymtrack_timed_migration_v1';
+
 export function getExercises(): Exercise[] {
   const data = localStorage.getItem(EXERCISES_KEY);
   if (!data) {
     localStorage.setItem(EXERCISES_KEY, JSON.stringify(defaultExercises));
+    localStorage.setItem(TIMED_MIGRATION_KEY, 'done');
     return defaultExercises;
   }
 
   // Parse stored exercises
-  const storedExercises: Exercise[] = JSON.parse(data);
+  let storedExercises: Exercise[] = JSON.parse(data);
+  let changed = false;
+
+  // One-time migration: mark known planks/holds/balance exercises as timed
+  if (localStorage.getItem(TIMED_MIGRATION_KEY) !== 'done') {
+    const timed = new Set(DEFAULT_TIMED_IDS);
+    storedExercises = storedExercises.map(e =>
+      timed.has(e.id) && !e.isTimed ? { ...e, isTimed: true } : e
+    );
+    localStorage.setItem(TIMED_MIGRATION_KEY, 'done');
+    changed = true;
+  }
 
   // Check if any default exercises are missing and add them
   // This handles the case where new exercises were added after the user first loaded the app
   const storedIds = new Set(storedExercises.map(e => e.id));
   const missingExercises = defaultExercises.filter(e => !storedIds.has(e.id));
-
   if (missingExercises.length > 0) {
-    const mergedExercises = [...storedExercises, ...missingExercises];
-    localStorage.setItem(EXERCISES_KEY, JSON.stringify(mergedExercises));
-    return mergedExercises;
+    storedExercises = [...storedExercises, ...missingExercises];
+    changed = true;
+  }
+
+  if (changed) {
+    localStorage.setItem(EXERCISES_KEY, JSON.stringify(storedExercises));
   }
 
   return storedExercises;
