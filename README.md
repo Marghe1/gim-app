@@ -1,4 +1,4 @@
-# GymTrack
+# GymApp
 
 A personal workout tracking app for circuit training.
 

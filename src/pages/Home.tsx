@@ -32,7 +32,7 @@ export default function Home() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `gymtrack-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `gymapp-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -73,7 +73,7 @@ export default function Home() {
   return (
     <div className="page">
       <div className="welcome-card">
-        <h2>Welcome to GymTrack</h2>
+        <h2>Welcome to GymApp</h2>
         <p>Track your circuit training and see your progress over time.</p>
       </div>
 

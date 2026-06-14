@@ -6,7 +6,7 @@ I need you to help me develop personal projects taking care of my requirements a
 
 ---
 
-# Project: GymTrack
+# Project: GymApp
 
 A personal workout tracking app for circuit training, similar to WoDup but for personal use only.
 
@@ -34,8 +34,8 @@ The app is being built in 5 modules (see `docs/DEVELOPMENT-PLAN.md`):
 ## Key Files
 - `docs/FEATURES.md` - Full feature list
 - `docs/DEVELOPMENT-PLAN.md` - Detailed module breakdown
-- `src/types/index.ts` - Data models
-- `src/utils/storage.ts` - Local storage functions
+- `docs/ROADMAP.md` - Upcoming features and ideas
+- `src/utils/storage.ts` - Data models (types) + localStorage functions
 
 ## Commands
 ```bash
@@ -45,7 +45,9 @@ npm run preview  # Preview production build
 ```
 
 ## Data Storage
-All data is stored in browser localStorage (no backend, no accounts). Keys:
+All data is stored in browser localStorage (no backend, no accounts). Keys keep
+the `gymtrack_` prefix on purpose (the app was renamed to GymApp later) so
+existing user data is not lost — do NOT rename them without a migration:
 - `gymtrack_workouts` - Saved workout templates
 - `gymtrack_workout_logs` - Completed workout logs
 - `gymtrack_exercises` - Exercise library

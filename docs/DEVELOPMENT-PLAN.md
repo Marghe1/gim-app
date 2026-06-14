@@ -1,6 +1,8 @@
 # Development Plan
 
-**STATUS: MODULE 6 COMPLETE**
+**STATUS: MODULE 6 COMPLETE + post-release fixes (see Module 7)**
+
+Next steps and new feature ideas live in `docs/ROADMAP.md`.
 
 ---
 
@@ -107,6 +109,21 @@
 - Add/remove sets during workout
 - Gradient exercise header
 - Finish button only when ready
+
+---
+
+## Module 7: Post-release Fixes & Exercise Notes ✅ COMPLETE
+
+**Features delivered:**
+- **Exercise notes during workout** - Leave a note for your future self on any
+  exercise; it shows up next session (stored in the workout log)
+- `getLastNoteForExercise` helper + `note` field on `ExerciseLog`
+- **Better swipe detection** - Swiping between exercises now requires a more
+  deliberate horizontal movement (80px threshold, must be 1.5× more horizontal
+  than vertical) so accidental swipes while scrolling are avoided
+- **Template weights bug fix** - Missing default exercises are now merged into
+  the user's library, so app updates that add new exercises don't break
+  imported templates
 
 ---
 

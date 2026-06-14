@@ -28,7 +28,7 @@ export default function About() {
         marginBottom: 16,
         color: '#374151',
       }}>
-        GymTrack
+        GymApp
       </h1>
 
       <p style={{

@@ -1,4 +1,4 @@
-# GymTrack - App Features
+# GymApp - App Features
 
 ## What is this app?
 
@@ -52,6 +52,8 @@ Where you actually do your workout and log your progress.
 - **Effort Rating** - After completing all sets, rate 1-5 how hard it was
 - **Rest Timer** - Auto-starts when you complete a set
 - **Smart Weight Pre-fill** - Weights auto-fill from last workout or default
+- **Exercise Notes** - Leave a note on any exercise for your future self; it
+  shows up the next time you do that exercise
 
 ### 5. Workout Complete
 After finishing a workout:
@@ -88,6 +90,7 @@ Charts showing your improvement over time.
 | **Swipe Between Exercises** | Navigate workouts with touch gestures |
 | **Add/Remove Sets** | Adjust sets during workout |
 | **Skip Exercises** | Skip exercises without losing the workout |
+| **Exercise Notes** | Leave a note on an exercise for next time |
 | **Rest Timer** | Automatic countdown with vibration alert |
 | **Progress Charts** | Visual graphs per exercise |
 | **Exercise Detail Page** | Weight history and stats per exercise |
@@ -99,7 +102,7 @@ Charts showing your improvement over time.
 
 ## Exercise Library
 
-The app comes with 57 exercises pre-loaded across these categories:
+The app comes with 77 exercises pre-loaded across these categories:
 
 **Legs:** Squat, Back Squat, Lunges, Reverse Lunge, Leg Press, Leg Curl, Leg Extension, Romanian Deadlift, Bulgarian Split Squat, Walking Lunge with Rotation, Lateral Step Down
 
@@ -129,7 +132,7 @@ You can add custom exercises anytime.
 
 ## PT Session Templates
 
-Four pre-built workout templates from personal trainer sessions:
+Eight pre-built workout templates from personal trainer sessions:
 
 1. **Session A1 - Lower Body Focus** (12 exercises)
    - Warm-up, core work, leg press, Romanian deadlifts, Bulgarian splits, hip thrusts
@@ -142,6 +145,18 @@ Four pre-built workout templates from personal trainer sessions:
 
 4. **Session 2 - Lower Push / Upper Pull** (9 exercises)
    - Back squats, bent-over rows, lat pulldowns, leg extensions
+
+5. **Session B1 - Lower Power & Unilateral** (12 exercises)
+   - Activation, drop jumps, single-leg RDLs, Bulgarian splits, stair climber
+
+6. **Session B2 - Full Body Strength & Power** (13 exercises)
+   - Mobility, kettlebell circuits, box step-ups, landmine rows, farmers walk
+
+7. **Session C1 - Lower Strength & Core** (10 exercises)
+   - Swiss ball core, pogo hops, heavy leg press, barbell RDLs, lat pulldowns
+
+8. **Session C2 - Unilateral Lower & Upper** (10 exercises)
+   - Core holds, single-leg balance, deficit splits, seated rows, shoulder press
 
 ---
 
