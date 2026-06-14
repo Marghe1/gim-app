@@ -57,6 +57,10 @@ export default function ActiveWorkout() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [suggestions, setSuggestions] = useState<ProgressionSuggestion[]>([]);
 
+  // Overall workout note (saved at the end of the session)
+  const [workoutNote, setWorkoutNote] = useState('');
+  const [finishedLog, setFinishedLog] = useState<WorkoutLog | null>(null);
+
   // Note modal
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [currentNoteText, setCurrentNoteText] = useState('');
@@ -379,11 +383,24 @@ export default function ActiveWorkout() {
       date: new Date().toISOString(),
       duration,
       exercises: completedLogs,
+      notes: workoutNote.trim() || undefined,
       completed: true,
     };
     saveWorkoutLog(log);
+    setFinishedLog(log);
 
     setShowCompleteModal(true);
+  }
+
+  // Keep the saved log in sync while the user types the overall note in the
+  // completion modal (localStorage upsert handled by saveWorkoutLog).
+  function updateWorkoutNote(text: string) {
+    setWorkoutNote(text);
+    if (finishedLog) {
+      const updated: WorkoutLog = { ...finishedLog, notes: text.trim() || undefined };
+      setFinishedLog(updated);
+      saveWorkoutLog(updated);
+    }
   }
 
   function goToHistory() {
@@ -509,9 +526,6 @@ export default function ActiveWorkout() {
               }}
             >
               <MessageSquare size={18} style={{ color: 'white' }} />
-              {currentLog?.note && (
-                <span style={{ fontSize: 10, color: 'white' }}>1</span>
-              )}
             </button>
           )}
 
@@ -525,6 +539,30 @@ export default function ActiveWorkout() {
           <div style={{ fontSize: 14, opacity: 0.9 }}>
             Target: {currentExercise?.targetSets} × {currentExercise?.targetReps} reps
           </div>
+
+          {/* Current note for this exercise (tap to edit) */}
+          {!isCurrentSkipped && currentLog?.note && (
+            <div
+              onClick={openNoteModal}
+              style={{
+                marginTop: 12,
+                padding: 10,
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: 8,
+                fontSize: 13,
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: 0.8, marginBottom: 4 }}>
+                <MessageSquare size={13} style={{ color: 'white' }} />
+                <span>Your note (tap to edit)</span>
+              </div>
+              <div style={{ fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>
+                {currentLog.note}
+              </div>
+            </div>
+          )}
 
           {/* Previous note hint */}
           {!isCurrentSkipped && previousNotes[currentExercise?.exerciseId] && !currentLog?.note && (
@@ -868,6 +906,28 @@ export default function ActiveWorkout() {
                 </div>
               </div>
             )}
+
+            {/* Overall workout note */}
+            <div style={{ marginBottom: 20, textAlign: 'left' }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
+                NOTE FOR THIS WORKOUT
+              </h3>
+              <textarea
+                value={workoutNote}
+                onChange={e => updateWorkoutNote(e.target.value)}
+                placeholder="e.g., 'Felt tired today', 'Great session', 'Cut it short'"
+                style={{
+                  width: '100%',
+                  padding: 12,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  minHeight: 70,
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </div>
 
             <button className="btn btn-primary btn-block" onClick={goToHistory}>
               View in History
