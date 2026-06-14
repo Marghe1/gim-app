@@ -6,6 +6,7 @@ import ExerciseDetail from './pages/ExerciseDetail';
 import Workouts from './pages/Workouts';
 import History from './pages/History';
 import Progress from './pages/Progress';
+import ProgressPhotos from './pages/ProgressPhotos';
 import ActiveWorkout from './pages/ActiveWorkout';
 import About from './pages/About';
 import UpdatePrompt from './components/UpdatePrompt';
@@ -22,6 +23,7 @@ function App() {
           <Route path="workouts" element={<Workouts />} />
           <Route path="history" element={<History />} />
           <Route path="progress" element={<Progress />} />
+          <Route path="photos" element={<ProgressPhotos />} />
           <Route path="about" element={<About />} />
         </Route>
         <Route path="/workout/:workoutId" element={<ActiveWorkout />} />
