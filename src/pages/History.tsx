@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, Calendar, Timer, ChevronDown, ChevronUp, Trash2, MessageSquare, Plus } from 'lucide-react';
 import type { WorkoutLog } from '../utils/storage';
-import { getWorkoutLogs, deleteWorkoutLog, saveWorkoutLog } from '../utils/storage';
+import { getWorkoutLogs, deleteWorkoutLog, saveWorkoutLog, getTimedExerciseIds, formatCount } from '../utils/storage';
 
 // Which note is currently being edited: a workout-level note (exIndex null) or
 // a specific exercise note (exIndex = position in the log's exercises array).
@@ -12,6 +12,7 @@ export default function History() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
   const [editText, setEditText] = useState('');
+  const [timedIds] = useState<Set<string>>(() => getTimedExerciseIds());
 
   useEffect(() => {
     loadLogs();
@@ -202,7 +203,9 @@ export default function History() {
                                   fontSize: 13,
                                 }}
                               >
-                                {set.weight}kg × {set.reps}
+                                {timedIds.has(exercise.exerciseId)
+                                  ? formatCount(set.reps, true)
+                                  : `${set.weight}kg × ${set.reps}`}
                               </div>
                             ))}
                           </div>

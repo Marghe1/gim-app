@@ -6,7 +6,22 @@ export type Exercise = {
   notes?: string;
   defaultWeight?: number;      // Starting weight in kg
   weightIncrement?: number;    // How much to increase (default 2.5kg)
+  isTimed?: boolean;           // Measured in seconds (holds, planks) instead of reps
 };
+
+// Format a rep count or hold duration with its unit.
+export function formatCount(value: number, isTimed?: boolean): string {
+  if (!isTimed) return `${value} reps`;
+  if (value < 60) return `${value}s`;
+  const m = Math.floor(value / 60);
+  const s = value % 60;
+  return s === 0 ? `${m}m` : `${m}m ${s}s`;
+}
+
+// Set of exercise ids that are time-based (holds, planks, balance, etc.)
+export function getTimedExerciseIds(): Set<string> {
+  return new Set(getExercises().filter(e => e.isTimed).map(e => e.id));
+}
 
 export type WorkoutExercise = {
   id: string;

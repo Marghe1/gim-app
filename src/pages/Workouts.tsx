@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, X, GripVertical, Play, Pencil, ChevronDown, ChevronRight, BookOpen, Copy } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutExercise, Exercise, WorkoutTemplate } from '../utils/storage';
-import { getWorkouts, saveWorkout, deleteWorkout, getExercises, getWorkoutTemplates } from '../utils/storage';
+import { getWorkouts, saveWorkout, deleteWorkout, getExercises, getWorkoutTemplates, getTimedExerciseIds, formatCount } from '../utils/storage';
 
 export default function Workouts() {
   const navigate = useNavigate();
@@ -28,6 +28,7 @@ export default function Workouts() {
   const [targetSets, setTargetSets] = useState(3);
   const [targetReps, setTargetReps] = useState(12);
   const [restSeconds, setRestSeconds] = useState(60);
+  const [timedIds] = useState<Set<string>>(() => getTimedExerciseIds());
 
   useEffect(() => {
     loadData();
@@ -222,7 +223,7 @@ export default function Workouts() {
                           >
                             <span style={{ fontWeight: 500 }}>{ex.exerciseName}</span>
                             <span style={{ color: 'var(--color-text-secondary)', marginLeft: 8 }}>
-                              {ex.targetSets}×{ex.targetReps}
+                              {ex.targetSets} × {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true) : ex.targetReps}
                             </span>
                           </div>
                         ))}
@@ -347,7 +348,7 @@ export default function Workouts() {
                   <div className="list-item-content">
                     <div className="list-item-title">{ex.exerciseName}</div>
                     <div className="list-item-subtitle">
-                      {ex.targetSets} sets x {ex.targetReps} reps • {ex.restSeconds}s rest
+                      {ex.targetSets} sets x {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true) : `${ex.targetReps} reps`} • {ex.restSeconds}s rest
                     </div>
                   </div>
                 </div>
@@ -411,14 +412,14 @@ export default function Workouts() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Reps</label>
+                <label className="form-label">{timedIds.has(selectedExerciseId) ? 'Seconds' : 'Reps'}</label>
                 <input
                   type="number"
                   className="form-input"
                   value={targetReps}
                   onChange={e => setTargetReps(Number(e.target.value))}
                   min={1}
-                  max={100}
+                  max={timedIds.has(selectedExerciseId) ? 600 : 100}
                 />
               </div>
             </div>

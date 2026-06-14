@@ -12,6 +12,7 @@ import {
   getExercisePersonalBest,
   getLastSameWorkoutPerformance,
   getProgressionSuggestions,
+  formatCount,
   type ProgressionSuggestion,
 } from '../utils/storage';
 
@@ -71,6 +72,9 @@ export default function ActiveWorkout() {
   // Last performance for each exercise from the previous workout of the same type
   const [lastPerformance, setLastPerformance] = useState<{ [exerciseId: string]: ExerciseLog | null }>({});
 
+  // Exercise ids that are time-based (seconds instead of reps)
+  const [timedExercises, setTimedExercises] = useState<Set<string>>(new Set());
+
   // Personal-best records (snapshot taken before this workout). Mutated in-place
   // as new records are hit so later sets compare against the running best.
   const personalBests = useRef<{ [exerciseId: string]: { maxWeight: number; maxReps: number } }>({});
@@ -93,6 +97,7 @@ export default function ActiveWorkout() {
 
       // Get exercise library for default weights
       const allExercises = getExercises();
+      setTimedExercises(new Set(allExercises.filter(e => e.isTimed).map(e => e.id)));
 
       // Load previous notes for all exercises
       const notes: { [exerciseId: string]: string | null } = {};
@@ -179,6 +184,7 @@ export default function ActiveWorkout() {
   const currentExercise = workout.exercises[currentExerciseIndex];
   const currentLog = exerciseLogs[currentExerciseIndex];
   const isCurrentSkipped = skippedExercises.has(currentExerciseIndex);
+  const isCurrentTimed = currentExercise ? timedExercises.has(currentExercise.exerciseId) : false;
 
   // Navigation with animation
   function goToExercise(index: number) {
@@ -291,7 +297,8 @@ export default function ActiveWorkout() {
           pb.maxWeight = set.weight;
         } else if (set.weight === 0 && pb.maxReps > 0 && set.reps > pb.maxReps) {
           const delta = set.reps - pb.maxReps;
-          showRecord(`🏆 New record! +${delta} reps`);
+          const isTimed = timedExercises.has(currentExercise.exerciseId);
+          showRecord(`🏆 New record! +${formatCount(delta, isTimed)}`);
           pb.maxReps = set.reps;
         }
       }
@@ -698,7 +705,7 @@ export default function ActiveWorkout() {
                   key={index}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '32px 1fr 1fr 44px 32px',
+                    gridTemplateColumns: isCurrentTimed ? '32px 1fr 44px 32px' : '32px 1fr 1fr 44px 32px',
                     gap: 6,
                     alignItems: 'center',
                     padding: 12,
@@ -717,6 +724,7 @@ export default function ActiveWorkout() {
                   </div>
 
                   {/* Weight input */}
+                  {!isCurrentTimed && (
                   <div>
                     <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>KG</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -751,10 +759,11 @@ export default function ActiveWorkout() {
                       </button>
                     </div>
                   </div>
+                  )}
 
-                  {/* Reps input */}
+                  {/* Reps / time input */}
                   <div>
-                    <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>REPS</label>
+                    <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>{isCurrentTimed ? 'SEC' : 'REPS'}</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <button
                         className="btn btn-ghost"
@@ -818,7 +827,7 @@ export default function ActiveWorkout() {
                     if (!prev) return null;
                     return (
                       <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                        Last time: {prev.weight > 0 ? `${prev.weight} kg × ${prev.reps} reps` : `${prev.reps} reps`}
+                        Last time: {prev.weight > 0 ? `${prev.weight} kg × ${prev.reps} reps` : formatCount(prev.reps, isCurrentTimed)}
                       </div>
                     );
                   })()}

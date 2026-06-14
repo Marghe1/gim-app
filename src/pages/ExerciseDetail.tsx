@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, TrendingUp, Target, Zap } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Exercise, ExerciseHistoryEntry } from '../utils/storage';
-import { getExercises, saveExercise, getExerciseHistory, getAverageEffort, getLastWeightForExercise } from '../utils/storage';
+import { getExercises, saveExercise, getExerciseHistory, getAverageEffort, getLastWeightForExercise, formatCount } from '../utils/storage';
 
 export default function ExerciseDetail() {
   const { exerciseId } = useParams();
@@ -17,6 +17,7 @@ export default function ExerciseDetail() {
   // Form state
   const [defaultWeight, setDefaultWeight] = useState<number>(0);
   const [weightIncrement, setWeightIncrement] = useState<number>(2.5);
+  const [isTimed, setIsTimed] = useState<boolean>(false);
 
   useEffect(() => {
     if (!exerciseId) return;
@@ -27,6 +28,7 @@ export default function ExerciseDetail() {
       setExercise(found);
       setDefaultWeight(found.defaultWeight || 0);
       setWeightIncrement(found.weightIncrement || 2.5);
+      setIsTimed(found.isTimed || false);
     }
 
     setHistory(getExerciseHistory(exerciseId));
@@ -41,6 +43,7 @@ export default function ExerciseDetail() {
       ...exercise,
       defaultWeight: defaultWeight || undefined,
       weightIncrement: weightIncrement || 2.5,
+      isTimed: isTimed || undefined,
     };
 
     saveExercise(updated);
@@ -170,50 +173,73 @@ export default function ExerciseDetail() {
         </div>
       ) : null}
 
-      {/* Weight Settings */}
+      {/* Settings */}
       <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <Target size={18} />
-          <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Weight Settings</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Settings</h3>
         </div>
 
-        {lastWeight !== null && (
-          <div style={{ background: '#f0fdf4', borderRadius: 8, padding: 12, marginBottom: 16 }}>
-            <span style={{ color: '#166534' }}>Last used: <strong>{lastWeight}kg</strong></span>
-          </div>
+        {/* Time-based toggle */}
+        <div className="form-group">
+          <label
+            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+          >
+            <input
+              type="checkbox"
+              checked={isTimed}
+              onChange={e => setIsTimed(e.target.checked)}
+              style={{ width: 18, height: 18 }}
+            />
+            <span className="form-label" style={{ margin: 0 }}>Time-based exercise (measured in seconds)</span>
+          </label>
+          <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+            Turn on for holds, planks or balance exercises. Shows seconds instead of reps.
+          </p>
+        </div>
+
+        {/* Weight settings only make sense for rep-based exercises */}
+        {!isTimed && (
+          <>
+            {lastWeight !== null && (
+              <div style={{ background: '#f0fdf4', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                <span style={{ color: '#166534' }}>Last used: <strong>{lastWeight}kg</strong></span>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label">Default Starting Weight (kg)</label>
+              <input
+                type="number"
+                className="form-input"
+                value={defaultWeight || ''}
+                onChange={e => setDefaultWeight(Number(e.target.value))}
+                placeholder="0"
+                min={0}
+                step={0.5}
+              />
+              <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                Used when no previous history exists
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Weight Increment (kg)</label>
+              <input
+                type="number"
+                className="form-input"
+                value={weightIncrement}
+                onChange={e => setWeightIncrement(Number(e.target.value))}
+                placeholder="2.5"
+                min={0.5}
+                step={0.5}
+              />
+              <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                How much to increase when progressing
+              </p>
+            </div>
+          </>
         )}
-
-        <div className="form-group">
-          <label className="form-label">Default Starting Weight (kg)</label>
-          <input
-            type="number"
-            className="form-input"
-            value={defaultWeight || ''}
-            onChange={e => setDefaultWeight(Number(e.target.value))}
-            placeholder="0"
-            min={0}
-            step={0.5}
-          />
-          <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-            Used when no previous history exists
-          </p>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Weight Increment (kg)</label>
-          <input
-            type="number"
-            className="form-input"
-            value={weightIncrement}
-            onChange={e => setWeightIncrement(Number(e.target.value))}
-            placeholder="2.5"
-            min={0.5}
-            step={0.5}
-          />
-          <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-            How much to increase when progressing
-          </p>
-        </div>
 
         <button className="btn btn-primary btn-block" onClick={handleSave}>
           Save Settings
@@ -229,7 +255,7 @@ export default function ExerciseDetail() {
               <div key={idx} className="list-item">
                 <div className="list-item-content">
                   <div className="list-item-title">
-                    {entry.weight}kg × {entry.reps} reps
+                    {isTimed ? formatCount(entry.reps, true) : `${entry.weight}kg × ${entry.reps} reps`}
                   </div>
                   <div className="list-item-subtitle">
                     {new Date(entry.date).toLocaleDateString('en-GB', {
