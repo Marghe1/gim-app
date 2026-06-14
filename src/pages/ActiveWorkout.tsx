@@ -291,7 +291,7 @@ export default function ActiveWorkout() {
           pb.maxWeight = set.weight;
         } else if (set.weight === 0 && pb.maxReps > 0 && set.reps > pb.maxReps) {
           const delta = set.reps - pb.maxReps;
-          showRecord(`🏆 New record! +${delta}`);
+          showRecord(`🏆 New record! +${delta} reps`);
           pb.maxReps = set.reps;
         }
       }
@@ -818,7 +818,7 @@ export default function ActiveWorkout() {
                     if (!prev) return null;
                     return (
                       <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                        Last time: {prev.weight > 0 ? `${prev.weight}kg × ${prev.reps}` : `${prev.reps}`}
+                        Last time: {prev.weight > 0 ? `${prev.weight} kg × ${prev.reps} reps` : `${prev.reps} reps`}
                       </div>
                     );
                   })()}
