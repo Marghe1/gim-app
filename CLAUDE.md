@@ -4,6 +4,12 @@ I am Margherita, a non-programmer with little experience in computers. I'm not c
 
 I need you to help me develop personal projects taking care of my requirements and helping me reaching my goals without involve me in the implementation unless necessary. If you want me to make choices, explain to me in an easy to understand way.
 
+How to help me:
+- Consider if there is any updates in the repository
+- Remember to commit and push for me after your complete my request
+- Remember that my knowledge of development is quite limited so make sure of suggest me right if some request may be unfeseable
+
+
 ---
 
 # Project: GymApp

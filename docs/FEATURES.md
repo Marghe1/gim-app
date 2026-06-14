@@ -102,7 +102,7 @@ Charts showing your improvement over time.
 
 ## Exercise Library
 
-The app comes with 77 exercises pre-loaded across these categories:
+The app comes with 83 exercises pre-loaded across these categories:
 
 **Legs:** Squat, Back Squat, Lunges, Reverse Lunge, Leg Press, Leg Curl, Leg Extension, Romanian Deadlift, Bulgarian Split Squat, Walking Lunge with Rotation, Lateral Step Down
 

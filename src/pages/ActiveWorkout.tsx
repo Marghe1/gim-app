@@ -44,6 +44,7 @@ export default function ActiveWorkout() {
   const touchEndX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
+  const isSwiping = useRef<boolean>(false);
 
   // Skipped exercises
   const [skippedExercises, setSkippedExercises] = useState<Set<number>>(new Set());
@@ -173,20 +174,29 @@ export default function ActiveWorkout() {
     }
   }
 
-  // Touch handlers for swipe
   function handleTouchStart(e: React.TouchEvent) {
+    // Don't start swipe if touching interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input') || target.closest('textarea')) {
+      isSwiping.current = false;
+      return;
+    }
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     touchEndX.current = e.touches[0].clientX;
     touchEndY.current = e.touches[0].clientY;
+    isSwiping.current = true;
   }
 
   function handleTouchMove(e: React.TouchEvent) {
+    if (!isSwiping.current) return;
     touchEndX.current = e.touches[0].clientX;
     touchEndY.current = e.touches[0].clientY;
   }
 
   function handleTouchEnd() {
+    if (!isSwiping.current) return;
+
     const diffX = touchStartX.current - touchEndX.current;
     const diffY = touchStartY.current - touchEndY.current;
     const threshold = 80; // Increased threshold for more deliberate swipes
@@ -201,6 +211,7 @@ export default function ActiveWorkout() {
         goPrevious();
       }
     }
+    isSwiping.current = false;
   }
 
   function updateSet(setIndex: number, field: 'weight' | 'reps', value: number) {
