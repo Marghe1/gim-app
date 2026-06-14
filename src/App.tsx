@@ -8,10 +8,12 @@ import History from './pages/History';
 import Progress from './pages/Progress';
 import ActiveWorkout from './pages/ActiveWorkout';
 import About from './pages/About';
+import UpdatePrompt from './components/UpdatePrompt';
 
 function App() {
   return (
     <BrowserRouter>
+      <UpdatePrompt />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
