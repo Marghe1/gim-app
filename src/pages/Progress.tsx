@@ -1,33 +1,45 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Trophy } from 'lucide-react';
+import { TrendingUp, Trophy, Flame } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { WorkoutLog } from '../utils/storage';
-import { getWorkoutLogs } from '../utils/storage';
+import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/storage';
+
+type Metric = 'weight' | 'reps' | 'time';
 
 interface ExerciseProgress {
+  id: string;
   name: string;
-  data: { date: string; weight: number }[];
-  bestWeight: number;
-  bestReps: number;
+  metric: Metric;
+  unit: string;
+  data: { date: string; value: number }[];
+  best: number;
+}
+
+function weekStartTime(d: Date): number {
+  const s = new Date(d);
+  s.setDate(s.getDate() - s.getDay());
+  s.setHours(0, 0, 0, 0);
+  return s.getTime();
 }
 
 export default function Progress() {
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress[]>([]);
-  const [selectedExercise, setSelectedExercise] = useState<string>('');
+  const [selectedId, setSelectedId] = useState<string>('');
   const [weeklyStats, setWeeklyStats] = useState({ thisWeek: 0, lastWeek: 0, total: 0 });
+  const [totalVolume, setTotalVolume] = useState(0);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     const allLogs = getWorkoutLogs().filter(l => l.completed);
     allLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     setLogs(allLogs);
 
-    // Calculate weekly stats
+    // Weekly counts
     const now = new Date();
     const startOfThisWeek = new Date(now);
     startOfThisWeek.setDate(now.getDate() - now.getDay());
     startOfThisWeek.setHours(0, 0, 0, 0);
-
     const startOfLastWeek = new Date(startOfThisWeek);
     startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
 
@@ -36,59 +48,81 @@ export default function Progress() {
       const date = new Date(l.date);
       return date >= startOfLastWeek && date < startOfThisWeek;
     }).length;
-
     setWeeklyStats({ thisWeek, lastWeek, total: allLogs.length });
 
-    // Build exercise progress data
-    const exerciseMap: { [key: string]: ExerciseProgress } = {};
+    // Total volume (kg moved) across all workouts
+    const volume = allLogs.reduce((sum, log) =>
+      sum + log.exercises.reduce((s, ex) =>
+        s + ex.sets.filter(st => st.completed).reduce((a, st) => a + st.weight * st.reps, 0), 0), 0);
+    setTotalVolume(Math.round(volume));
+
+    // Weekly streak (consecutive weeks with at least one workout)
+    const weeks = new Set(allLogs.map(l => weekStartTime(new Date(l.date))));
+    let count = 0;
+    const cursor = new Date(startOfThisWeek);
+    // Don't break the streak just because the current week hasn't started yet
+    if (!weeks.has(cursor.getTime())) cursor.setDate(cursor.getDate() - 7);
+    while (weeks.has(cursor.getTime())) {
+      count++;
+      cursor.setDate(cursor.getDate() - 7);
+    }
+    setStreak(count);
+
+    // Per-exercise progress, picking the right metric for each exercise
+    const timedIds = getTimedExerciseIds();
+    const raw: { [id: string]: { name: string; entries: { date: string; maxWeight: number; maxReps: number }[]; everWeighted: boolean } } = {};
 
     allLogs.forEach(log => {
       log.exercises.forEach(ex => {
-        if (!exerciseMap[ex.exerciseName]) {
-          exerciseMap[ex.exerciseName] = {
-            name: ex.exerciseName,
-            data: [],
-            bestWeight: 0,
-            bestReps: 0,
-          };
+        const completed = ex.sets.filter(s => s.completed);
+        if (completed.length === 0) return;
+        const maxWeight = Math.max(...completed.map(s => s.weight));
+        const maxReps = Math.max(...completed.map(s => s.reps));
+        if (!raw[ex.exerciseId]) {
+          raw[ex.exerciseId] = { name: ex.exerciseName, entries: [], everWeighted: false };
         }
-
-        // Get max weight from this workout for this exercise
-        const maxWeight = Math.max(...ex.sets.filter(s => s.completed).map(s => s.weight));
-        const maxReps = Math.max(...ex.sets.filter(s => s.completed).map(s => s.reps));
-
-        if (maxWeight > 0) {
-          exerciseMap[ex.exerciseName].data.push({
-            date: new Date(log.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-            weight: maxWeight,
-          });
-
-          if (maxWeight > exerciseMap[ex.exerciseName].bestWeight) {
-            exerciseMap[ex.exerciseName].bestWeight = maxWeight;
-          }
-          if (maxReps > exerciseMap[ex.exerciseName].bestReps) {
-            exerciseMap[ex.exerciseName].bestReps = maxReps;
-          }
-        }
+        raw[ex.exerciseId].name = ex.exerciseName;
+        raw[ex.exerciseId].entries.push({
+          date: new Date(log.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+          maxWeight,
+          maxReps,
+        });
+        if (maxWeight > 0) raw[ex.exerciseId].everWeighted = true;
       });
     });
 
-    const progressList = Object.values(exerciseMap).filter(e => e.data.length > 0);
-    progressList.sort((a, b) => b.data.length - a.data.length);
-    setExerciseProgress(progressList);
+    const list: ExerciseProgress[] = Object.entries(raw).map(([id, r]) => {
+      const metric: Metric = timedIds.has(id) ? 'time' : r.everWeighted ? 'weight' : 'reps';
+      const unit = metric === 'weight' ? 'kg' : metric === 'time' ? 's' : 'reps';
+      const data = r.entries
+        .map(e => ({ date: e.date, value: metric === 'weight' ? e.maxWeight : e.maxReps }))
+        .filter(d => d.value > 0);
+      const best = data.length ? Math.max(...data.map(d => d.value)) : 0;
+      return { id, name: r.name, metric, unit, data, best };
+    }).filter(e => e.data.length > 0);
 
-    if (progressList.length > 0 && !selectedExercise) {
-      setSelectedExercise(progressList[0].name);
-    }
+    // Most-trained first
+    list.sort((a, b) => b.data.length - a.data.length);
+    setExerciseProgress(list);
+    if (list.length > 0) setSelectedId(list[0].id);
   }, []);
 
-  const selectedData = exerciseProgress.find(e => e.name === selectedExercise);
+  const selectedData = exerciseProgress.find(e => e.id === selectedId);
 
-  // Get top 5 personal records
-  const personalRecords = exerciseProgress
-    .filter(e => e.bestWeight > 0)
-    .sort((a, b) => b.bestWeight - a.bestWeight)
-    .slice(0, 5);
+  function formatBest(p: ExerciseProgress): string {
+    if (p.metric === 'time') return formatCount(p.best, true);
+    if (p.metric === 'weight') return `${p.best} kg`;
+    return `${p.best} reps`;
+  }
+
+  function chartTooltip(value: number): [string, string] {
+    if (!selectedData) return [`${value}`, ''];
+    if (selectedData.metric === 'time') return [formatCount(value, true), 'Best'];
+    if (selectedData.metric === 'weight') return [`${value} kg`, 'Weight'];
+    return [`${value} reps`, 'Reps'];
+  }
+
+  const weekDelta = weeklyStats.thisWeek - weeklyStats.lastWeek;
 
   return (
     <div className="page">
@@ -105,15 +139,36 @@ export default function Progress() {
         </div>
       ) : (
         <>
-          {/* Weekly Stats */}
+          {/* Summary stats */}
           <div className="stats-grid" style={{ marginBottom: 24 }}>
             <div className="stat-card">
               <div className="stat-value">{weeklyStats.thisWeek}</div>
               <div className="stat-label">This week</div>
+              {weeklyStats.lastWeek > 0 && (
+                <div style={{
+                  fontSize: 12,
+                  marginTop: 4,
+                  fontWeight: 600,
+                  color: weekDelta > 0 ? '#16a34a' : weekDelta < 0 ? '#dc2626' : '#6b7280',
+                }}>
+                  {weekDelta > 0 ? '↑' : weekDelta < 0 ? '↓' : '='} {weekDelta === 0 ? 'same as' : `${Math.abs(weekDelta)} vs`} last week
+                </div>
+              )}
+            </div>
+            <div className="stat-card">
+              <div className="stat-value" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                {streak > 0 && <Flame size={22} style={{ color: '#f97316' }} />}
+                {streak}
+              </div>
+              <div className="stat-label">{streak === 1 ? 'Week streak' : 'Weeks streak'}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{weeklyStats.total}</div>
               <div className="stat-label">Total workouts</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{totalVolume.toLocaleString('en-GB')}</div>
+              <div className="stat-label">Total volume (kg)</div>
             </div>
           </div>
 
@@ -122,17 +177,17 @@ export default function Progress() {
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <TrendingUp size={18} />
-                <h3 style={{ fontSize: 16, fontWeight: 600 }}>Weight Progress</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 600 }}>Progress</h3>
               </div>
 
               <select
                 className="form-select"
-                value={selectedExercise}
-                onChange={e => setSelectedExercise(e.target.value)}
+                value={selectedId}
+                onChange={e => setSelectedId(e.target.value)}
                 style={{ marginBottom: 16 }}
               >
                 {exerciseProgress.map(ex => (
-                  <option key={ex.name} value={ex.name}>{ex.name}</option>
+                  <option key={ex.id} value={ex.id}>{ex.name}</option>
                 ))}
               </select>
 
@@ -142,14 +197,11 @@ export default function Progress() {
                     <LineChart data={selectedData.data}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} unit="kg" />
-                      <Tooltip
-                        formatter={(value) => [`${value} kg`, 'Weight']}
-                        contentStyle={{ borderRadius: 8 }}
-                      />
+                      <YAxis tick={{ fontSize: 12 }} unit={selectedData.metric === 'reps' ? '' : selectedData.unit} />
+                      <Tooltip formatter={(value) => chartTooltip(Number(value))} contentStyle={{ borderRadius: 8 }} />
                       <Line
                         type="monotone"
-                        dataKey="weight"
+                        dataKey="value"
                         stroke="#6366f1"
                         strokeWidth={2}
                         dot={{ fill: '#6366f1', r: 4 }}
@@ -166,7 +218,7 @@ export default function Progress() {
           )}
 
           {/* Personal Records */}
-          {personalRecords.length > 0 && (
+          {exerciseProgress.length > 0 && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <Trophy size={18} style={{ color: '#f59e0b' }} />
@@ -174,27 +226,24 @@ export default function Progress() {
               </div>
 
               <div className="list">
-                {personalRecords.map((record, idx) => (
-                  <div key={record.name} className="list-item">
+                {exerciseProgress.map(record => (
+                  <div key={record.id} className="list-item">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{
                         width: 28,
                         height: 28,
                         borderRadius: '50%',
-                        background: idx === 0 ? '#fef3c7' : '#f3f4f6',
+                        background: '#fef3c7',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: idx === 0 ? '#f59e0b' : '#6b7280',
                       }}>
-                        {idx + 1}
+                        <Trophy size={15} style={{ color: '#f59e0b' }} />
                       </div>
                       <div>
                         <div style={{ fontWeight: 500 }}>{record.name}</div>
                         <div style={{ fontSize: 13, color: '#6b7280' }}>
-                          Best: {record.bestWeight}kg × {record.bestReps} reps
+                          Best: {formatBest(record)}
                         </div>
                       </div>
                     </div>
