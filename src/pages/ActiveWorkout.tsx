@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { X, Play, Pause, RotateCcw, Check, Minus, Plus, Clock, SkipForward, Trash2, MessageSquare, Youtube } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
-import type { Workout, WorkoutLog, ExerciseLog, SetLog } from '../utils/storage';
+import type { Workout, WorkoutLog, ExerciseLog, SetLog, ExerciseGroup } from '../utils/storage';
 import {
   getWorkouts,
   saveWorkoutLog,
   getExercises,
+  getExerciseGroups,
   getExerciseVideoUrl,
   getLastWeightForExercise,
   getLastNoteForExercise,
@@ -30,7 +31,8 @@ export default function ActiveWorkout() {
   const navigate = useNavigate();
 
   const [workout, setWorkout] = useState<Workout | null>(null);
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  // Navigation is by group (a circuit, or a single standalone exercise)
+  const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -50,12 +52,12 @@ export default function ActiveWorkout() {
   const touchEndY = useRef<number>(0);
   const isSwiping = useRef<boolean>(false);
 
-  // Skipped exercises
+  // Skipped exercises (by index into workout.exercises)
   const [skippedExercises, setSkippedExercises] = useState<Set<number>>(new Set());
 
-  // Effort rating modal
+  // Effort rating modal (rated per group)
   const [showEffortModal, setShowEffortModal] = useState(false);
-  const [pendingEffortExerciseIndex, setPendingEffortExerciseIndex] = useState<number | null>(null);
+  const [pendingEffortGroupIndex, setPendingEffortGroupIndex] = useState<number | null>(null);
 
   // Workout complete modal
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -65,8 +67,9 @@ export default function ActiveWorkout() {
   const [workoutNote, setWorkoutNote] = useState('');
   const [finishedLog, setFinishedLog] = useState<WorkoutLog | null>(null);
 
-  // Note modal
+  // Note modal (per exercise)
   const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteExerciseIndex, setNoteExerciseIndex] = useState<number | null>(null);
   const [currentNoteText, setCurrentNoteText] = useState('');
   const [previousNotes, setPreviousNotes] = useState<{ [exerciseId: string]: string | null }>({});
 
@@ -173,6 +176,12 @@ export default function ActiveWorkout() {
     };
   }, [timerRunning, timerSeconds]);
 
+  // Group the exercises into circuits / standalone exercises
+  const groups: ExerciseGroup[] = useMemo(
+    () => (workout ? getExerciseGroups(workout.exercises) : []),
+    [workout]
+  );
+
   if (!workout) {
     return (
       <div className="page">
@@ -186,35 +195,56 @@ export default function ActiveWorkout() {
     );
   }
 
-  const currentExercise = workout.exercises[currentExerciseIndex];
-  const currentLog = exerciseLogs[currentExerciseIndex];
-  const isCurrentSkipped = skippedExercises.has(currentExerciseIndex);
-  const isCurrentTimed = currentExercise ? timedExercises.has(currentExercise.exerciseId) : false;
+  const currentGroup = groups[currentGroupIndex];
+  const isCircuit = (currentGroup?.items.length ?? 0) > 1;
+
+  // Number of rounds in a group = the most sets any of its exercises has
+  function roundCountFor(group: ExerciseGroup): number {
+    return group.items.reduce((max, item) => {
+      const len = exerciseLogs[item.index]?.sets.length ?? 0;
+      return Math.max(max, len);
+    }, 0);
+  }
+
+  // Whether every non-skipped exercise in a group has all its sets completed
+  function isGroupComplete(group: ExerciseGroup): boolean {
+    const active = group.items.filter(it => !skippedExercises.has(it.index));
+    if (active.length === 0) return true;
+    return active.every(it => exerciseLogs[it.index]?.sets.every(s => s.completed));
+  }
+
+  function openVideo(exerciseId: string, exerciseName: string) {
+    window.open(
+      getExerciseVideoUrl({ name: exerciseName, videoUrl: videoOverrides[exerciseId] }),
+      '_blank',
+      'noopener'
+    );
+  }
 
   // Navigation with animation
-  function goToExercise(index: number) {
-    if (index < 0 || index >= workout!.exercises.length || isAnimating) return;
+  function goToGroup(index: number) {
+    if (index < 0 || index >= groups.length || isAnimating) return;
 
-    const direction = index > currentExerciseIndex ? 'left' : 'right';
+    const direction = index > currentGroupIndex ? 'left' : 'right';
     setSlideDirection(direction);
     setIsAnimating(true);
 
     setTimeout(() => {
-      setCurrentExerciseIndex(index);
+      setCurrentGroupIndex(index);
       setSlideDirection(null);
       setTimeout(() => setIsAnimating(false), 50);
     }, 200);
   }
 
   function goNext() {
-    if (currentExerciseIndex < workout!.exercises.length - 1) {
-      goToExercise(currentExerciseIndex + 1);
+    if (currentGroupIndex < groups.length - 1) {
+      goToGroup(currentGroupIndex + 1);
     }
   }
 
   function goPrevious() {
-    if (currentExerciseIndex > 0) {
-      goToExercise(currentExerciseIndex - 1);
+    if (currentGroupIndex > 0) {
+      goToGroup(currentGroupIndex - 1);
     }
   }
 
@@ -258,23 +288,23 @@ export default function ActiveWorkout() {
     isSwiping.current = false;
   }
 
-  function updateSet(setIndex: number, field: 'weight' | 'reps', value: number) {
+  function updateSet(exIndex: number, setIndex: number, field: 'weight' | 'reps', value: number) {
     const newLogs = [...exerciseLogs];
-    newLogs[currentExerciseIndex].sets[setIndex][field] = value;
+    newLogs[exIndex].sets[setIndex][field] = value;
     setExerciseLogs(newLogs);
   }
 
-  function adjustWeight(setIndex: number, delta: number) {
+  function adjustWeight(exIndex: number, setIndex: number, delta: number) {
     const newLogs = [...exerciseLogs];
-    const currentWeight = newLogs[currentExerciseIndex].sets[setIndex].weight;
-    newLogs[currentExerciseIndex].sets[setIndex].weight = Math.max(0, currentWeight + delta);
+    const current = newLogs[exIndex].sets[setIndex].weight;
+    newLogs[exIndex].sets[setIndex].weight = Math.max(0, current + delta);
     setExerciseLogs(newLogs);
   }
 
-  function adjustReps(setIndex: number, delta: number) {
+  function adjustReps(exIndex: number, setIndex: number, delta: number) {
     const newLogs = [...exerciseLogs];
-    const currentReps = newLogs[currentExerciseIndex].sets[setIndex].reps;
-    newLogs[currentExerciseIndex].sets[setIndex].reps = Math.max(0, currentReps + delta);
+    const current = newLogs[exIndex].sets[setIndex].reps;
+    newLogs[exIndex].sets[setIndex].reps = Math.max(0, current + delta);
     setExerciseLogs(newLogs);
   }
 
@@ -285,15 +315,17 @@ export default function ActiveWorkout() {
     recordTimeoutRef.current = window.setTimeout(() => setRecordMessage(null), 4000);
   }
 
-  function toggleSetComplete(setIndex: number) {
+  function toggleSetComplete(exIndex: number, setIndex: number) {
     const newLogs = [...exerciseLogs];
-    const set = newLogs[currentExerciseIndex].sets[setIndex];
+    const set = newLogs[exIndex].sets[setIndex];
     set.completed = !set.completed;
     setExerciseLogs(newLogs);
 
+    const exercise = workout!.exercises[exIndex];
+
     // Celebrate a new personal record when completing a set
-    if (set.completed && currentExercise) {
-      const pb = personalBests.current[currentExercise.exerciseId];
+    if (set.completed && exercise) {
+      const pb = personalBests.current[exercise.exerciseId];
       if (pb) {
         if (set.weight > 0 && pb.maxWeight > 0 && set.weight > pb.maxWeight) {
           const delta = set.weight - pb.maxWeight;
@@ -302,7 +334,7 @@ export default function ActiveWorkout() {
           pb.maxWeight = set.weight;
         } else if (set.weight === 0 && pb.maxReps > 0 && set.reps > pb.maxReps) {
           const delta = set.reps - pb.maxReps;
-          const isTimed = timedExercises.has(currentExercise.exerciseId);
+          const isTimed = timedExercises.has(exercise.exerciseId);
           showRecord(`🏆 New record! +${formatCount(delta, isTimed)}`);
           pb.maxReps = set.reps;
         }
@@ -310,99 +342,106 @@ export default function ActiveWorkout() {
     }
 
     // Start rest timer when completing a set
-    if (set.completed && currentExercise) {
-      setTimerTarget(currentExercise.restSeconds);
-      setTimerSeconds(currentExercise.restSeconds);
+    if (set.completed && exercise) {
+      setTimerTarget(exercise.restSeconds);
+      setTimerSeconds(exercise.restSeconds);
       setTimerRunning(true);
 
-      // Check if all sets for this exercise are now complete
-      const allSetsComplete = newLogs[currentExerciseIndex].sets.every(s => s.completed);
-      if (allSetsComplete && newLogs[currentExerciseIndex].effortRating === undefined) {
-        setPendingEffortExerciseIndex(currentExerciseIndex);
-        setShowEffortModal(true);
+      // If the whole circuit/exercise is now done, ask for an effort rating once
+      const group = groups[currentGroupIndex];
+      if (group) {
+        const active = group.items.filter(it => !skippedExercises.has(it.index));
+        const allComplete = active.every(it => newLogs[it.index]?.sets.every(s => s.completed));
+        const alreadyRated = active.some(it => newLogs[it.index]?.effortRating !== undefined);
+        if (allComplete && active.length > 0 && !alreadyRated) {
+          setPendingEffortGroupIndex(currentGroupIndex);
+          setShowEffortModal(true);
+        }
       }
     }
   }
 
-  function addSet() {
+  // Add a round to a circuit (one extra set to every exercise in the group)
+  function addRound(group: ExerciseGroup) {
     const newLogs = [...exerciseLogs];
-    const currentSets = newLogs[currentExerciseIndex].sets;
-    const lastSet = currentSets[currentSets.length - 1];
-
-    const newSet: SetLog = {
-      setNumber: currentSets.length + 1,
-      reps: lastSet?.reps || currentExercise?.targetReps || 10,
-      weight: lastSet?.weight || 0,
-      completed: false,
-    };
-
-    newLogs[currentExerciseIndex].sets.push(newSet);
+    group.items.forEach(item => {
+      if (skippedExercises.has(item.index)) return;
+      const sets = newLogs[item.index].sets;
+      const lastSet = sets[sets.length - 1];
+      const newSet: SetLog = {
+        setNumber: sets.length + 1,
+        reps: lastSet?.reps || item.exercise.targetReps || 10,
+        weight: lastSet?.weight || 0,
+        completed: false,
+      };
+      sets.push(newSet);
+    });
     setExerciseLogs(newLogs);
   }
 
-  function removeSet(setIndex: number) {
+  function removeSet(exIndex: number, setIndex: number) {
     const newLogs = [...exerciseLogs];
-    if (newLogs[currentExerciseIndex].sets.length <= 1) return;
+    if (newLogs[exIndex].sets.length <= 1) return;
 
-    newLogs[currentExerciseIndex].sets.splice(setIndex, 1);
+    newLogs[exIndex].sets.splice(setIndex, 1);
     // Renumber sets
-    newLogs[currentExerciseIndex].sets.forEach((set, idx) => {
+    newLogs[exIndex].sets.forEach((set, idx) => {
       set.setNumber = idx + 1;
     });
     setExerciseLogs(newLogs);
   }
 
-  function skipExercise() {
+  function skipExercise(exIndex: number) {
     const newSkipped = new Set(skippedExercises);
-    newSkipped.add(currentExerciseIndex);
+    newSkipped.add(exIndex);
     setSkippedExercises(newSkipped);
-
-    // Auto-advance to next exercise
-    if (currentExerciseIndex < workout!.exercises.length - 1) {
-      goNext();
-    }
   }
 
-  function unskipExercise() {
+  function unskipExercise(exIndex: number) {
     const newSkipped = new Set(skippedExercises);
-    newSkipped.delete(currentExerciseIndex);
+    newSkipped.delete(exIndex);
     setSkippedExercises(newSkipped);
   }
 
   function setEffortRating(rating: number) {
-    if (pendingEffortExerciseIndex === null) return;
+    if (pendingEffortGroupIndex === null) return;
 
+    const group = groups[pendingEffortGroupIndex];
     const newLogs = [...exerciseLogs];
-    newLogs[pendingEffortExerciseIndex].effortRating = rating;
+    group.items.forEach(item => {
+      if (skippedExercises.has(item.index)) return;
+      newLogs[item.index].effortRating = rating;
+    });
     setExerciseLogs(newLogs);
 
     setShowEffortModal(false);
-    setPendingEffortExerciseIndex(null);
+    setPendingEffortGroupIndex(null);
 
-    // Auto-advance to next exercise
-    if (currentExerciseIndex < workout!.exercises.length - 1) {
+    // Auto-advance to next group
+    if (currentGroupIndex < groups.length - 1) {
       setTimeout(() => goNext(), 100);
     }
   }
 
   function skipEffortRating() {
     setShowEffortModal(false);
-    setPendingEffortExerciseIndex(null);
+    setPendingEffortGroupIndex(null);
 
-    if (currentExerciseIndex < workout!.exercises.length - 1) {
+    if (currentGroupIndex < groups.length - 1) {
       setTimeout(() => goNext(), 100);
     }
   }
 
-  function openNoteModal() {
-    const existingNote = exerciseLogs[currentExerciseIndex]?.note || '';
-    setCurrentNoteText(existingNote);
+  function openNoteModal(exIndex: number) {
+    setNoteExerciseIndex(exIndex);
+    setCurrentNoteText(exerciseLogs[exIndex]?.note || '');
     setShowNoteModal(true);
   }
 
   function saveNote() {
+    if (noteExerciseIndex === null) return;
     const newLogs = [...exerciseLogs];
-    newLogs[currentExerciseIndex].note = currentNoteText.trim() || undefined;
+    newLogs[noteExerciseIndex].note = currentNoteText.trim() || undefined;
     setExerciseLogs(newLogs);
     setShowNoteModal(false);
   }
@@ -478,9 +517,6 @@ export default function ActiveWorkout() {
     }
   }
 
-  const completedSets = currentLog?.sets.filter(s => s.completed).length || 0;
-  const totalSets = currentLog?.sets.length || 0;
-
   // Check if workout can be finished (all non-skipped exercises have all sets complete)
   const canFinish = exerciseLogs.every((ex, idx) =>
     skippedExercises.has(idx) || ex.sets.every(s => s.completed)
@@ -500,6 +536,143 @@ export default function ActiveWorkout() {
       opacity: 0,
     };
   };
+
+  // Render a single editable set row for an exercise within a round
+  function renderSetRow(exIndex: number, setIndex: number, leftLabel: string) {
+    const log = exerciseLogs[exIndex];
+    const set = log?.sets[setIndex];
+    if (!set) return null;
+    const exercise = workout!.exercises[exIndex];
+    const isTimed = timedExercises.has(exercise.exerciseId);
+    const prev = lastPerformance[exercise.exerciseId]?.sets[setIndex];
+
+    return (
+      <div
+        key={`${exIndex}-${setIndex}`}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isTimed ? '44px 1fr 44px 32px' : '44px 1fr 1fr 44px 32px',
+          gap: 6,
+          alignItems: 'center',
+          padding: 12,
+          background: set.completed ? '#dcfce7' : 'white',
+          border: `2px solid ${set.completed ? '#22c55e' : '#e5e7eb'}`,
+          borderRadius: 12,
+        }}
+      >
+        <div style={{
+          fontWeight: 700,
+          fontSize: 13,
+          color: set.completed ? '#22c55e' : '#6b7280',
+          textAlign: 'center',
+        }}>
+          {leftLabel}
+        </div>
+
+        {/* Weight input */}
+        {!isTimed && (
+          <div>
+            <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>KG</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <button
+                className="btn btn-ghost"
+                style={{ padding: 2, minWidth: 24, fontSize: 12 }}
+                onClick={() => adjustWeight(exIndex, setIndex, -2.5)}
+              >
+                <Minus size={12} />
+              </button>
+              <input
+                type="number"
+                style={{
+                  width: '100%',
+                  padding: '6px 2px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textAlign: 'center',
+                }}
+                value={set.weight || ''}
+                onChange={e => updateSet(exIndex, setIndex, 'weight', Number(e.target.value))}
+                placeholder="0"
+              />
+              <button
+                className="btn btn-ghost"
+                style={{ padding: 2, minWidth: 24, fontSize: 12 }}
+                onClick={() => adjustWeight(exIndex, setIndex, 2.5)}
+              >
+                <Plus size={12} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Reps / time input */}
+        <div>
+          <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>{isTimed ? 'SEC' : 'REPS'}</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <button
+              className="btn btn-ghost"
+              style={{ padding: 2, minWidth: 24, fontSize: 12 }}
+              onClick={() => adjustReps(exIndex, setIndex, -1)}
+            >
+              <Minus size={12} />
+            </button>
+            <input
+              type="number"
+              style={{
+                width: '100%',
+                padding: '6px 2px',
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
+                fontSize: 14,
+                fontWeight: 600,
+                textAlign: 'center',
+              }}
+              value={set.reps}
+              onChange={e => updateSet(exIndex, setIndex, 'reps', Number(e.target.value))}
+            />
+            <button
+              className="btn btn-ghost"
+              style={{ padding: 2, minWidth: 24, fontSize: 12 }}
+              onClick={() => adjustReps(exIndex, setIndex, 1)}
+            >
+              <Plus size={12} />
+            </button>
+          </div>
+        </div>
+
+        {/* Complete button */}
+        <button
+          className={`btn ${set.completed ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: 6, height: 40, width: 44, marginTop: 14, borderRadius: 10 }}
+          onClick={() => toggleSetComplete(exIndex, setIndex)}
+        >
+          <Check size={18} />
+        </button>
+
+        {/* Delete set button */}
+        <button
+          className="btn btn-ghost"
+          style={{ padding: 4, marginTop: 14, opacity: 0.5 }}
+          onClick={() => removeSet(exIndex, setIndex)}
+          disabled={log.sets.length <= 1}
+        >
+          <Trash2 size={14} />
+        </button>
+
+        {/* Last time hint */}
+        {prev && (
+          <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
+            Last time: {prev.weight > 0 ? `${prev.weight} kg × ${prev.reps} reps` : formatCount(prev.reps, isTimed)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const rounds = currentGroup ? roundCountFor(currentGroup) : 0;
+  const noteExercise = noteExerciseIndex !== null ? workout.exercises[noteExerciseIndex] : null;
 
   return (
     <div className="page" style={{ paddingBottom: 100, overflow: 'hidden' }}>
@@ -548,35 +721,40 @@ export default function ActiveWorkout() {
         <div style={{ width: 40 }} />
       </div>
 
-      {/* Exercise dots navigation */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 16 }}>
-        {workout.exercises.map((_, index) => {
-          const exLog = exerciseLogs[index];
-          const isSkipped = skippedExercises.has(index);
-          const isComplete = exLog?.sets.every(s => s.completed);
-          const isPartial = exLog?.sets.some(s => s.completed);
-          const hasRating = exLog?.effortRating !== undefined;
+      {/* Group dots navigation */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+        {groups.map((group, index) => {
+          const complete = isGroupComplete(group);
+          const partial = group.items.some(it => exerciseLogs[it.index]?.sets.some(s => s.completed));
+          const allSkipped = group.items.every(it => skippedExercises.has(it.index));
 
           return (
             <button
-              key={index}
-              onClick={() => goToExercise(index)}
+              key={group.key}
+              onClick={() => goToGroup(index)}
               style={{
-                width: 16,
+                minWidth: 16,
                 height: 16,
-                borderRadius: '50%',
-                border: hasRating ? '2px solid #f59e0b' : index === currentExerciseIndex ? '2px solid #6366f1' : 'none',
+                padding: group.items.length > 1 ? '0 4px' : 0,
+                borderRadius: 8,
+                border: index === currentGroupIndex ? '2px solid #6366f1' : 'none',
                 cursor: 'pointer',
-                background: isSkipped ? '#9ca3af' : isComplete ? '#22c55e' : isPartial ? '#f59e0b' : '#e5e7eb',
+                background: allSkipped ? '#9ca3af' : complete ? '#22c55e' : partial ? '#f59e0b' : '#e5e7eb',
                 transition: 'all 0.2s',
-                transform: index === currentExerciseIndex ? 'scale(1.2)' : 'scale(1)',
+                transform: index === currentGroupIndex ? 'scale(1.15)' : 'scale(1)',
+                fontSize: 9,
+                fontWeight: 700,
+                color: 'white',
+                lineHeight: '14px',
               }}
-            />
+            >
+              {group.items.length > 1 ? group.label : ''}
+            </button>
           );
         })}
       </div>
 
-      {/* Swipeable exercise container */}
+      {/* Swipeable group container */}
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -586,294 +764,209 @@ export default function ActiveWorkout() {
           ...getSlideStyle(),
         }}
       >
-        {/* Exercise header */}
+        {/* Group header */}
         <div style={{
-          background: isCurrentSkipped ? '#f3f4f6' : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
           borderRadius: 16,
           padding: 20,
           marginBottom: 16,
-          color: isCurrentSkipped ? '#6b7280' : 'white',
+          color: 'white',
           textAlign: 'center',
-          position: 'relative',
         }}>
-          {/* How-to video button - top left */}
-          {currentExercise && (
-            <button
-              onClick={() =>
-                window.open(
-                  getExerciseVideoUrl({
-                    name: currentExercise.exerciseName,
-                    videoUrl: videoOverrides[currentExercise.exerciseId],
-                  }),
-                  '_blank',
-                  'noopener'
-                )
-              }
-              title="How to"
-              style={{
-                position: 'absolute',
-                top: 12,
-                left: 12,
-                background: isCurrentSkipped ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.15)',
-                border: 'none',
-                borderRadius: 10,
-                padding: 16,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4,
-              }}
-            >
-              <Youtube size={18} style={{ color: isCurrentSkipped ? '#6b7280' : 'white' }} />
-            </button>
-          )}
-
-          {/* Note button - top right */}
-          {!isCurrentSkipped && (
-            <button
-              onClick={openNoteModal}
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 12,
-                background: currentLog?.note ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
-                border: 'none',
-                borderRadius: 10,
-                padding: 16,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4,
-              }}
-            >
-              <MessageSquare size={18} style={{ color: 'white' }} />
-            </button>
-          )}
-
           <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>
-            Exercise {currentExerciseIndex + 1} of {workout.exercises.length}
-          </div>
-          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-            {currentExercise?.exerciseName}
-            {isCurrentSkipped && ' (Skipped)'}
-          </div>
-          <div style={{ fontSize: 14, opacity: 0.9 }}>
-            Target: {currentExercise?.targetSets} × {currentExercise?.targetReps} reps
+            {isCircuit ? 'Circuit' : 'Exercise'} {currentGroupIndex + 1} of {groups.length}
           </div>
 
-          {/* Current note for this exercise (tap to edit) */}
-          {!isCurrentSkipped && currentLog?.note && (
-            <div
-              onClick={openNoteModal}
-              style={{
-                marginTop: 12,
-                padding: 10,
-                background: 'rgba(255,255,255,0.2)',
-                borderRadius: 8,
-                fontSize: 13,
-                textAlign: 'left',
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: 0.8, marginBottom: 4 }}>
-                <MessageSquare size={13} style={{ color: 'white' }} />
-                <span>Your note (tap to edit)</span>
+          {isCircuit ? (
+            <>
+              <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>
+                Circuit {currentGroup.label}
               </div>
-              <div style={{ fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>
-                {currentLog.note}
+              <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 12 }}>
+                {rounds} {rounds === 1 ? 'round' : 'rounds'} · do one set of each, then repeat
               </div>
-            </div>
+              {/* Exercise list inside the circuit */}
+              <div style={{ display: 'grid', gap: 6, textAlign: 'left' }}>
+                {currentGroup.items.map(item => {
+                  const skipped = skippedExercises.has(item.index);
+                  const log = exerciseLogs[item.index];
+                  return (
+                    <div
+                      key={item.exercise.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 10px',
+                        background: 'rgba(255,255,255,0.15)',
+                        borderRadius: 8,
+                        opacity: skipped ? 0.5 : 1,
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, fontSize: 13, minWidth: 24 }}>{item.subLabel}</span>
+                      <span style={{ flex: 1, fontSize: 14, textDecoration: skipped ? 'line-through' : 'none' }}>
+                        {item.exercise.exerciseName}
+                        <span style={{ opacity: 0.7, marginLeft: 6, fontSize: 12 }}>
+                          × {timedExercises.has(item.exercise.exerciseId)
+                            ? formatCount(item.exercise.targetReps, true)
+                            : `${item.exercise.targetReps}`}
+                        </span>
+                      </span>
+                      <button
+                        onClick={() => openVideo(item.exercise.exerciseId, item.exercise.exerciseName)}
+                        title="How to"
+                        style={{
+                          background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8,
+                          padding: 8, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                        }}
+                      >
+                        <Youtube size={15} style={{ color: 'white' }} />
+                      </button>
+                      <button
+                        onClick={() => openNoteModal(item.index)}
+                        style={{
+                          background: log?.note ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)',
+                          border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center',
+                        }}
+                      >
+                        <MessageSquare size={15} style={{ color: 'white' }} />
+                      </button>
+                      <button
+                        onClick={() => skipped ? unskipExercise(item.index) : skipExercise(item.index)}
+                        style={{
+                          background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8,
+                          padding: '6px 8px', cursor: 'pointer', color: 'white', fontSize: 11, fontWeight: 600,
+                        }}
+                      >
+                        {skipped ? 'Undo' : 'Skip'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <>
+              {(() => {
+                const item = currentGroup.items[0];
+                const skipped = skippedExercises.has(item.index);
+                const log = exerciseLogs[item.index];
+                const isTimed = timedExercises.has(item.exercise.exerciseId);
+                return (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+                      <button
+                        onClick={() => openVideo(item.exercise.exerciseId, item.exercise.exerciseName)}
+                        title="How to"
+                        style={{
+                          background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10,
+                          padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                        }}
+                      >
+                        <Youtube size={18} style={{ color: 'white' }} />
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
+                      {item.exercise.exerciseName}
+                      {skipped && ' (Skipped)'}
+                    </div>
+                    <div style={{ fontSize: 14, opacity: 0.9 }}>
+                      Target: {item.exercise.targetSets} × {isTimed ? formatCount(item.exercise.targetReps, true) : `${item.exercise.targetReps} reps`}
+                    </div>
+                    {log?.note && (
+                      <div
+                        onClick={() => openNoteModal(item.index)}
+                        style={{
+                          marginTop: 12, padding: 10, background: 'rgba(255,255,255,0.2)',
+                          borderRadius: 8, fontSize: 13, textAlign: 'left', cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: 0.8, marginBottom: 4 }}>
+                          <MessageSquare size={13} style={{ color: 'white' }} />
+                          <span>Your note (tap to edit)</span>
+                        </div>
+                        <div style={{ fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>{log.note}</div>
+                      </div>
+                    )}
+                    {previousNotes[item.exercise.exerciseId] && !log?.note && (
+                      <div style={{
+                        marginTop: 12, padding: 8, background: 'rgba(255,255,255,0.15)',
+                        borderRadius: 8, fontSize: 12, textAlign: 'left',
+                      }}>
+                        <div style={{ opacity: 0.7, marginBottom: 2 }}>Last note:</div>
+                        <div style={{ fontStyle: 'italic' }}>"{previousNotes[item.exercise.exerciseId]}"</div>
+                      </div>
+                    )}
+                    <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}>
+                      {!log?.note && (
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => openNoteModal(item.index)}
+                          style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
+                        >
+                          <MessageSquare size={16} /> Note
+                        </button>
+                      )}
+                      {skipped ? (
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => unskipExercise(item.index)}
+                          style={{ background: 'white', color: '#6366f1' }}
+                        >
+                          Restore Exercise
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => skipExercise(item.index)}
+                          style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
+                        >
+                          <SkipForward size={16} /> Skip
+                        </button>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </>
           )}
-
-          {/* Previous note hint */}
-          {!isCurrentSkipped && previousNotes[currentExercise?.exerciseId] && !currentLog?.note && (
-            <div style={{
-              marginTop: 12,
-              padding: 8,
-              background: 'rgba(255,255,255,0.15)',
-              borderRadius: 8,
-              fontSize: 12,
-              textAlign: 'left',
-            }}>
-              <div style={{ opacity: 0.7, marginBottom: 2 }}>Last note:</div>
-              <div style={{ fontStyle: 'italic' }}>
-                "{previousNotes[currentExercise.exerciseId]}"
-              </div>
-            </div>
-          )}
-
-          {/* Skip/Unskip button */}
-          <div style={{ marginTop: 12 }}>
-            {isCurrentSkipped ? (
-              <button
-                className="btn btn-sm"
-                onClick={unskipExercise}
-                style={{ background: 'white', color: '#6366f1' }}
-              >
-                Restore Exercise
-              </button>
-            ) : (
-              <button
-                className="btn btn-sm"
-                onClick={skipExercise}
-                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
-              >
-                <SkipForward size={16} />
-                Skip Exercise
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* Sets - only show if not skipped */}
-        {!isCurrentSkipped && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontWeight: 600 }}>Sets ({completedSets}/{totalSets})</span>
-              <button className="btn btn-secondary btn-sm" onClick={addSet}>
-                <Plus size={16} /> Add Set
-              </button>
-            </div>
+        {/* Rounds */}
+        <div style={{ marginBottom: 16 }}>
+          {Array.from({ length: rounds }, (_, r) => {
+            // Exercises in this group that have a set for this round and aren't skipped
+            const rowItems = currentGroup.items.filter(
+              it => !skippedExercises.has(it.index) && exerciseLogs[it.index]?.sets[r]
+            );
+            if (rowItems.length === 0) return null;
 
-            <div style={{ display: 'grid', gap: 10 }}>
-              {currentLog?.sets.map((set, index) => (
-                <div
-                  key={index}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: isCurrentTimed ? '32px 1fr 44px 32px' : '32px 1fr 1fr 44px 32px',
-                    gap: 6,
-                    alignItems: 'center',
-                    padding: 12,
-                    background: set.completed ? '#dcfce7' : 'white',
-                    border: `2px solid ${set.completed ? '#22c55e' : '#e5e7eb'}`,
-                    borderRadius: 12,
-                  }}
-                >
-                  <div style={{
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: set.completed ? '#22c55e' : '#6b7280',
-                    textAlign: 'center',
-                  }}>
-                    {set.setNumber}
-                  </div>
-
-                  {/* Weight input */}
-                  {!isCurrentTimed && (
-                  <div>
-                    <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>KG</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <button
-                        className="btn btn-ghost"
-                        style={{ padding: 2, minWidth: 24, fontSize: 12 }}
-                        onClick={() => adjustWeight(index, -2.5)}
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <input
-                        type="number"
-                        style={{
-                          width: '100%',
-                          padding: '6px 2px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 6,
-                          fontSize: 14,
-                          fontWeight: 600,
-                          textAlign: 'center',
-                        }}
-                        value={set.weight || ''}
-                        onChange={e => updateSet(index, 'weight', Number(e.target.value))}
-                        placeholder="0"
-                      />
-                      <button
-                        className="btn btn-ghost"
-                        style={{ padding: 2, minWidth: 24, fontSize: 12 }}
-                        onClick={() => adjustWeight(index, 2.5)}
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
-                  </div>
-                  )}
-
-                  {/* Reps / time input */}
-                  <div>
-                    <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>{isCurrentTimed ? 'SEC' : 'REPS'}</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <button
-                        className="btn btn-ghost"
-                        style={{ padding: 2, minWidth: 24, fontSize: 12 }}
-                        onClick={() => adjustReps(index, -1)}
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <input
-                        type="number"
-                        style={{
-                          width: '100%',
-                          padding: '6px 2px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 6,
-                          fontSize: 14,
-                          fontWeight: 600,
-                          textAlign: 'center',
-                        }}
-                        value={set.reps}
-                        onChange={e => updateSet(index, 'reps', Number(e.target.value))}
-                      />
-                      <button
-                        className="btn btn-ghost"
-                        style={{ padding: 2, minWidth: 24, fontSize: 12 }}
-                        onClick={() => adjustReps(index, 1)}
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Complete button */}
-                  <button
-                    className={`btn ${set.completed ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{
-                      padding: 6,
-                      height: 40,
-                      width: 44,
-                      marginTop: 14,
-                      borderRadius: 10,
-                    }}
-                    onClick={() => toggleSetComplete(index)}
-                  >
-                    <Check size={18} />
-                  </button>
-
-                  {/* Delete set button */}
-                  <button
-                    className="btn btn-ghost"
-                    style={{ padding: 4, marginTop: 14, opacity: 0.5 }}
-                    onClick={() => removeSet(index)}
-                    disabled={currentLog.sets.length <= 1}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-
-                  {/* Last time hint */}
-                  {(() => {
-                    const prev = lastPerformance[currentExercise?.exerciseId]?.sets[index];
-                    if (!prev) return null;
-                    return (
-                      <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                        Last time: {prev.weight > 0 ? `${prev.weight} kg × ${prev.reps} reps` : formatCount(prev.reps, isCurrentTimed)}
-                      </div>
-                    );
-                  })()}
+            return (
+              <div key={r} style={{ marginBottom: 14 }}>
+                <div style={{
+                  fontSize: 13, fontWeight: 700, color: '#6b7280',
+                  marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5,
+                }}>
+                  {isCircuit ? `Round ${r + 1}` : `Set ${r + 1}`}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {rowItems.map(it =>
+                    renderSetRow(it.index, r, isCircuit ? it.subLabel : `${r + 1}`)
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          <button
+            className="btn btn-secondary btn-sm btn-block"
+            onClick={() => addRound(currentGroup)}
+            style={{ marginTop: 4 }}
+          >
+            <Plus size={16} /> {isCircuit ? 'Add Round' : 'Add Set'}
+          </button>
+        </div>
 
         {/* Rest Timer */}
         <div style={{
@@ -929,11 +1022,7 @@ export default function ActiveWorkout() {
         <button
           className="btn btn-primary btn-block"
           onClick={finishWorkout}
-          style={{
-            padding: 16,
-            fontSize: 16,
-            fontWeight: 600,
-          }}
+          style={{ padding: 16, fontSize: 16, fontWeight: 600 }}
         >
           Finish Workout
         </button>
@@ -941,11 +1030,11 @@ export default function ActiveWorkout() {
 
       {/* Swipe hint */}
       <div style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 12 }}>
-        Swipe left/right to change exercise
+        Swipe left/right to change {isCircuit ? 'circuit' : 'exercise'}
       </div>
 
       {/* Effort Rating Modal */}
-      {showEffortModal && pendingEffortExerciseIndex !== null && (
+      {showEffortModal && pendingEffortGroupIndex !== null && (
         <div
           className="modal-overlay"
           style={{ background: 'rgba(0,0,0,0.6)' }}
@@ -958,7 +1047,9 @@ export default function ActiveWorkout() {
           >
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
-                How was {exerciseLogs[pendingEffortExerciseIndex]?.exerciseName}?
+                {groups[pendingEffortGroupIndex]?.items.length > 1
+                  ? `How was Circuit ${groups[pendingEffortGroupIndex].label}?`
+                  : `How was ${groups[pendingEffortGroupIndex]?.items[0]?.exercise.exerciseName}?`}
               </h2>
               <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
                 Rate your effort level
@@ -1073,7 +1164,7 @@ export default function ActiveWorkout() {
       )}
 
       {/* Note Modal */}
-      {showNoteModal && (
+      {showNoteModal && noteExercise && (
         <div
           className="modal-overlay"
           style={{ background: 'rgba(0,0,0,0.6)' }}
@@ -1086,7 +1177,7 @@ export default function ActiveWorkout() {
           >
             <div style={{ marginBottom: 16 }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
-                Note for {currentLog?.exerciseName}
+                Note for {noteExercise.exerciseName}
               </h2>
               <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
                 Leave a note for your future self
@@ -1094,7 +1185,7 @@ export default function ActiveWorkout() {
             </div>
 
             {/* Show previous note if exists */}
-            {previousNotes[currentExercise?.exerciseId] && (
+            {previousNotes[noteExercise.exerciseId] && (
               <div style={{
                 padding: 10,
                 background: '#f3f4f6',
@@ -1104,7 +1195,7 @@ export default function ActiveWorkout() {
               }}>
                 <div style={{ color: '#6b7280', marginBottom: 4 }}>Previous note:</div>
                 <div style={{ fontStyle: 'italic' }}>
-                  "{previousNotes[currentExercise.exerciseId]}"
+                  "{previousNotes[noteExercise.exerciseId]}"
                 </div>
               </div>
             )}

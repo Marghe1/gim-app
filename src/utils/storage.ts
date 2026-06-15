@@ -38,7 +38,55 @@ export type WorkoutExercise = {
   targetSets: number;
   targetReps: number;
   restSeconds: number;
+  // Circuit grouping. Exercises that share the same non-empty `group` value are
+  // performed as an alternating circuit/superset (one set of each, then repeat).
+  // Undefined means the exercise stands on its own (all sets before moving on).
+  group?: string;
 };
+
+// A circuit/superset: one or more exercises performed alternating, round by round.
+// A standalone exercise is just a group of size 1.
+export type ExerciseGroup = {
+  key: string;
+  label: string;            // 'A', 'B', 'C' ... (position-based)
+  items: {
+    exercise: WorkoutExercise;
+    index: number;          // index into the original exercises array
+    subLabel: string;       // 'A' for standalone, 'B1'/'B2' inside a circuit
+  }[];
+};
+
+// Organize a workout's exercises into ordered circuit groups. Exercises sharing
+// the same `group` value are bundled together (assumed contiguous, as in a PT
+// plan). Standalone exercises each become their own single-item group.
+export function getExerciseGroups(exercises: WorkoutExercise[]): ExerciseGroup[] {
+  const order: string[] = [];
+  const buckets = new Map<string, { exercise: WorkoutExercise; index: number }[]>();
+
+  exercises.forEach((exercise, index) => {
+    const key = exercise.group && exercise.group.trim()
+      ? `g:${exercise.group.trim()}`
+      : `s:${exercise.id}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, []);
+      order.push(key);
+    }
+    buckets.get(key)!.push({ exercise, index });
+  });
+
+  return order.map((key, groupIndex) => {
+    const letter = String.fromCharCode(65 + groupIndex); // A, B, C ...
+    const items = buckets.get(key)!;
+    return {
+      key,
+      label: letter,
+      items: items.map((it, i) => ({
+        ...it,
+        subLabel: items.length > 1 ? `${letter}${i + 1}` : letter,
+      })),
+    };
+  });
+}
 
 export type Workout = {
   id: string;
@@ -285,18 +333,18 @@ const workoutTemplates: WorkoutTemplate[] = [
     isTemplate: true,
     category: 'PT Sessions',
     exercises: [
-      { id: 't1-1', exerciseId: '21', exerciseName: 'Cable Pallof Rotation', targetSets: 2, targetReps: 12, restSeconds: 30 },
-      { id: 't1-2', exerciseId: '23', exerciseName: 'Ankle Pumps', targetSets: 1, targetReps: 20, restSeconds: 20 },
-      { id: 't1-3', exerciseId: '63', exerciseName: 'Eccentric Heel Drop', targetSets: 1, targetReps: 10, restSeconds: 20 },
-      { id: 't1-4', exerciseId: '25', exerciseName: 'Pike Lifts', targetSets: 1, targetReps: 10, restSeconds: 30 },
-      { id: 't1-5', exerciseId: '26', exerciseName: 'Kettlebell Pullthrough', targetSets: 3, targetReps: 20, restSeconds: 45 },
-      { id: 't1-6', exerciseId: '27', exerciseName: 'Hollow Body Hold', targetSets: 3, targetReps: 20, restSeconds: 45 },
-      { id: 't1-7', exerciseId: '12', exerciseName: 'Leg Press', targetSets: 5, targetReps: 8, restSeconds: 90 },
-      { id: 't1-8', exerciseId: '28', exerciseName: 'Romanian Deadlift', targetSets: 5, targetReps: 8, restSeconds: 90 },
-      { id: 't1-9', exerciseId: '29', exerciseName: 'Bulgarian Split Squat', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 't1-10', exerciseId: '62', exerciseName: 'Single Leg Hip Thrust', targetSets: 3, targetReps: 12, restSeconds: 60 },
-      { id: 't1-11', exerciseId: '31', exerciseName: 'Elevated Plank Row', targetSets: 3, targetReps: 10, restSeconds: 45 },
-      { id: 't1-12', exerciseId: '32', exerciseName: 'Stair Climber', targetSets: 1, targetReps: 10, restSeconds: 0 },
+      { id: 't1-1', exerciseId: '21', exerciseName: 'Cable Pallof Rotation', targetSets: 2, targetReps: 12, restSeconds: 30, group: 'A' },
+      { id: 't1-2', exerciseId: '23', exerciseName: 'Ankle Pumps', targetSets: 1, targetReps: 20, restSeconds: 20, group: 'B' },
+      { id: 't1-3', exerciseId: '63', exerciseName: 'Eccentric Heel Drop', targetSets: 1, targetReps: 10, restSeconds: 20, group: 'B' },
+      { id: 't1-4', exerciseId: '25', exerciseName: 'Pike Lifts', targetSets: 1, targetReps: 10, restSeconds: 30, group: 'B' },
+      { id: 't1-5', exerciseId: '26', exerciseName: 'Kettlebell Pullthrough', targetSets: 3, targetReps: 20, restSeconds: 45, group: 'C' },
+      { id: 't1-6', exerciseId: '27', exerciseName: 'Hollow Body Hold', targetSets: 3, targetReps: 20, restSeconds: 45, group: 'C' },
+      { id: 't1-7', exerciseId: '12', exerciseName: 'Leg Press', targetSets: 5, targetReps: 8, restSeconds: 90, group: 'D' },
+      { id: 't1-8', exerciseId: '28', exerciseName: 'Romanian Deadlift', targetSets: 5, targetReps: 8, restSeconds: 90, group: 'E' },
+      { id: 't1-9', exerciseId: '29', exerciseName: 'Bulgarian Split Squat', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'F' },
+      { id: 't1-10', exerciseId: '62', exerciseName: 'Single Leg Hip Thrust', targetSets: 3, targetReps: 12, restSeconds: 60, group: 'F' },
+      { id: 't1-11', exerciseId: '31', exerciseName: 'Elevated Plank Row', targetSets: 3, targetReps: 10, restSeconds: 45, group: 'G' },
+      { id: 't1-12', exerciseId: '32', exerciseName: 'Stair Climber', targetSets: 1, targetReps: 10, restSeconds: 0, group: 'H' },
     ],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
@@ -308,23 +356,23 @@ const workoutTemplates: WorkoutTemplate[] = [
     isTemplate: true,
     category: 'PT Sessions',
     exercises: [
-      { id: 't2-1', exerciseId: '33', exerciseName: 'Hip Mobility', targetSets: 1, targetReps: 16, restSeconds: 20 },
-      { id: 't2-2', exerciseId: '34', exerciseName: 'Cat Cow', targetSets: 1, targetReps: 8, restSeconds: 20 },
-      { id: 't2-3', exerciseId: '35', exerciseName: 'Prone Scorpion', targetSets: 1, targetReps: 8, restSeconds: 20 },
-      { id: 't2-4', exerciseId: '36', exerciseName: 'Thoracic Rotations', targetSets: 1, targetReps: 8, restSeconds: 30 },
-      { id: 't2-5', exerciseId: '37', exerciseName: 'Walking Lunge with Rotation', targetSets: 2, targetReps: 12, restSeconds: 45 },
-      { id: 't2-6', exerciseId: '38', exerciseName: 'Copenhagen Plank', targetSets: 2, targetReps: 30, restSeconds: 45 },
-      { id: 't2-7', exerciseId: '39', exerciseName: 'Overhead March', targetSets: 2, targetReps: 20, restSeconds: 45 },
-      { id: 't2-8', exerciseId: '40', exerciseName: 'Drop Jump', targetSets: 2, targetReps: 8, restSeconds: 60 },
-      { id: 't2-9', exerciseId: '41', exerciseName: 'Counter Movement Jump', targetSets: 2, targetReps: 8, restSeconds: 60 },
-      { id: 't2-10', exerciseId: '64', exerciseName: 'Chest Ball Slam', targetSets: 3, targetReps: 10, restSeconds: 30 },
-      { id: 't2-11', exerciseId: '43', exerciseName: 'Med Ball Throws', targetSets: 3, targetReps: 20, restSeconds: 30 },
-      { id: 't2-12', exerciseId: '42', exerciseName: 'Ball Slams', targetSets: 3, targetReps: 10, restSeconds: 30 },
-      { id: 't2-13', exerciseId: '44', exerciseName: 'Wall Ball Shots', targetSets: 3, targetReps: 10, restSeconds: 45 },
-      { id: 't2-14', exerciseId: '61', exerciseName: 'Elevated Push-Up', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 't2-15', exerciseId: '45', exerciseName: 'Suspended Row', targetSets: 3, targetReps: 10, restSeconds: 60 },
-      { id: 't2-16', exerciseId: '26', exerciseName: 'Kettlebell Pullthrough', targetSets: 3, targetReps: 15, restSeconds: 45 },
-      { id: 't2-17', exerciseId: '11', exerciseName: 'Russian Twist', targetSets: 3, targetReps: 20, restSeconds: 45 },
+      { id: 't2-1', exerciseId: '33', exerciseName: 'Hip Mobility', targetSets: 1, targetReps: 16, restSeconds: 20, group: 'A' },
+      { id: 't2-2', exerciseId: '34', exerciseName: 'Cat Cow', targetSets: 1, targetReps: 8, restSeconds: 20, group: 'B' },
+      { id: 't2-3', exerciseId: '35', exerciseName: 'Prone Scorpion', targetSets: 1, targetReps: 8, restSeconds: 20, group: 'C' },
+      { id: 't2-4', exerciseId: '36', exerciseName: 'Thoracic Rotations', targetSets: 1, targetReps: 8, restSeconds: 30, group: 'D' },
+      { id: 't2-5', exerciseId: '37', exerciseName: 'Walking Lunge with Rotation', targetSets: 2, targetReps: 12, restSeconds: 45, group: 'E' },
+      { id: 't2-6', exerciseId: '38', exerciseName: 'Copenhagen Plank', targetSets: 2, targetReps: 30, restSeconds: 45, group: 'E' },
+      { id: 't2-7', exerciseId: '39', exerciseName: 'Overhead March', targetSets: 2, targetReps: 20, restSeconds: 45, group: 'E' },
+      { id: 't2-8', exerciseId: '40', exerciseName: 'Drop Jump', targetSets: 2, targetReps: 8, restSeconds: 60, group: 'F' },
+      { id: 't2-9', exerciseId: '41', exerciseName: 'Counter Movement Jump', targetSets: 2, targetReps: 8, restSeconds: 60, group: 'F' },
+      { id: 't2-10', exerciseId: '64', exerciseName: 'Chest Ball Slam', targetSets: 3, targetReps: 10, restSeconds: 30, group: 'G' },
+      { id: 't2-11', exerciseId: '43', exerciseName: 'Med Ball Throws', targetSets: 3, targetReps: 20, restSeconds: 30, group: 'G' },
+      { id: 't2-12', exerciseId: '42', exerciseName: 'Ball Slams', targetSets: 3, targetReps: 10, restSeconds: 30, group: 'G' },
+      { id: 't2-13', exerciseId: '44', exerciseName: 'Wall Ball Shots', targetSets: 3, targetReps: 10, restSeconds: 45, group: 'G' },
+      { id: 't2-14', exerciseId: '61', exerciseName: 'Elevated Push-Up', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'H' },
+      { id: 't2-15', exerciseId: '45', exerciseName: 'Suspended Row', targetSets: 3, targetReps: 10, restSeconds: 60, group: 'H' },
+      { id: 't2-16', exerciseId: '26', exerciseName: 'Kettlebell Pullthrough', targetSets: 3, targetReps: 15, restSeconds: 45, group: 'I' },
+      { id: 't2-17', exerciseId: '11', exerciseName: 'Russian Twist', targetSets: 3, targetReps: 20, restSeconds: 45, group: 'I' },
     ],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
@@ -336,15 +384,15 @@ const workoutTemplates: WorkoutTemplate[] = [
     isTemplate: true,
     category: 'PT Sessions',
     exercises: [
-      { id: 't3-1', exerciseId: '22', exerciseName: 'Cable Pallof Press', targetSets: 3, targetReps: 10, restSeconds: 30 },
-      { id: 't3-2', exerciseId: '58', exerciseName: 'Single Leg Glute Bridge', targetSets: 3, targetReps: 12, restSeconds: 30 },
-      { id: 't3-3', exerciseId: '59', exerciseName: 'Forward to Side Plank', targetSets: 3, targetReps: 18, restSeconds: 30 },
-      { id: 't3-4', exerciseId: '2', exerciseName: 'Deadlift', targetSets: 5, targetReps: 6, restSeconds: 120 },
-      { id: 't3-5', exerciseId: '57', exerciseName: 'Flat Bench Press', targetSets: 3, targetReps: 12, restSeconds: 90 },
-      { id: 't3-6', exerciseId: '28', exerciseName: 'Romanian Deadlift', targetSets: 3, targetReps: 8, restSeconds: 90 },
-      { id: 't3-7', exerciseId: '48', exerciseName: 'Shoulder Press', targetSets: 3, targetReps: 12, restSeconds: 60 },
-      { id: 't3-8', exerciseId: '16', exerciseName: 'Leg Curl', targetSets: 3, targetReps: 12, restSeconds: 60 },
-      { id: 't3-9', exerciseId: '49', exerciseName: 'Incline Walk', targetSets: 1, targetReps: 10, restSeconds: 0 },
+      { id: 't3-1', exerciseId: '22', exerciseName: 'Cable Pallof Press', targetSets: 3, targetReps: 10, restSeconds: 30, group: 'A' },
+      { id: 't3-2', exerciseId: '58', exerciseName: 'Single Leg Glute Bridge', targetSets: 3, targetReps: 12, restSeconds: 30, group: 'A' },
+      { id: 't3-3', exerciseId: '59', exerciseName: 'Forward to Side Plank', targetSets: 3, targetReps: 18, restSeconds: 30, group: 'A' },
+      { id: 't3-4', exerciseId: '2', exerciseName: 'Deadlift', targetSets: 5, targetReps: 6, restSeconds: 120, group: 'B' },
+      { id: 't3-5', exerciseId: '57', exerciseName: 'Flat Bench Press', targetSets: 3, targetReps: 12, restSeconds: 90, group: 'C' },
+      { id: 't3-6', exerciseId: '28', exerciseName: 'Romanian Deadlift', targetSets: 3, targetReps: 8, restSeconds: 90, group: 'D' },
+      { id: 't3-7', exerciseId: '48', exerciseName: 'Shoulder Press', targetSets: 3, targetReps: 12, restSeconds: 60, group: 'E' },
+      { id: 't3-8', exerciseId: '16', exerciseName: 'Leg Curl', targetSets: 3, targetReps: 12, restSeconds: 60, group: 'F' },
+      { id: 't3-9', exerciseId: '49', exerciseName: 'Incline Walk', targetSets: 1, targetReps: 10, restSeconds: 0, group: 'G' },
     ],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
@@ -356,15 +404,15 @@ const workoutTemplates: WorkoutTemplate[] = [
     isTemplate: true,
     category: 'PT Sessions',
     exercises: [
-      { id: 't4-1', exerciseId: '50', exerciseName: 'Kettlebell Windmill', targetSets: 3, targetReps: 8, restSeconds: 30 },
-      { id: 't4-2', exerciseId: '51', exerciseName: 'Curl Up', targetSets: 3, targetReps: 5, restSeconds: 30 },
-      { id: 't4-3', exerciseId: '52', exerciseName: 'Reverse Lunge', targetSets: 3, targetReps: 8, restSeconds: 30 },
-      { id: 't4-4', exerciseId: '53', exerciseName: 'Seated Row', targetSets: 3, targetReps: 10, restSeconds: 45 },
-      { id: 't4-5', exerciseId: '54', exerciseName: 'Back Squat', targetSets: 5, targetReps: 6, restSeconds: 120 },
-      { id: 't4-6', exerciseId: '55', exerciseName: 'Bent-Over Row', targetSets: 3, targetReps: 10, restSeconds: 90 },
-      { id: 't4-7', exerciseId: '56', exerciseName: 'Lateral Step Down', targetSets: 3, targetReps: 10, restSeconds: 60 },
-      { id: 't4-8', exerciseId: '60', exerciseName: 'Unilateral Cable Lat Pulldown', targetSets: 3, targetReps: 10, restSeconds: 60 },
-      { id: 't4-9', exerciseId: '17', exerciseName: 'Leg Extension', targetSets: 3, targetReps: 12, restSeconds: 60 },
+      { id: 't4-1', exerciseId: '50', exerciseName: 'Kettlebell Windmill', targetSets: 3, targetReps: 8, restSeconds: 30, group: 'A' },
+      { id: 't4-2', exerciseId: '51', exerciseName: 'Curl Up', targetSets: 3, targetReps: 5, restSeconds: 30, group: 'A' },
+      { id: 't4-3', exerciseId: '52', exerciseName: 'Reverse Lunge', targetSets: 3, targetReps: 8, restSeconds: 30, group: 'A' },
+      { id: 't4-4', exerciseId: '53', exerciseName: 'Seated Row', targetSets: 3, targetReps: 10, restSeconds: 45, group: 'A' },
+      { id: 't4-5', exerciseId: '54', exerciseName: 'Back Squat', targetSets: 5, targetReps: 6, restSeconds: 120, group: 'B' },
+      { id: 't4-6', exerciseId: '55', exerciseName: 'Bent-Over Row', targetSets: 3, targetReps: 10, restSeconds: 90, group: 'C' },
+      { id: 't4-7', exerciseId: '56', exerciseName: 'Lateral Step Down', targetSets: 3, targetReps: 10, restSeconds: 60, group: 'D' },
+      { id: 't4-8', exerciseId: '60', exerciseName: 'Unilateral Cable Lat Pulldown', targetSets: 3, targetReps: 10, restSeconds: 60, group: 'E' },
+      { id: 't4-9', exerciseId: '17', exerciseName: 'Leg Extension', targetSets: 3, targetReps: 12, restSeconds: 60, group: 'F' },
     ],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
@@ -376,18 +424,18 @@ const workoutTemplates: WorkoutTemplate[] = [
     isTemplate: true,
     category: 'PT Sessions',
     exercises: [
-      { id: 'b1-1', exerciseId: '23', exerciseName: 'Ankle Pumps', targetSets: 1, targetReps: 20, restSeconds: 30 },
-      { id: 'b1-2', exerciseId: '24', exerciseName: 'Heel Drops', targetSets: 1, targetReps: 10, restSeconds: 30 },
-      { id: 'b1-3', exerciseId: '25', exerciseName: 'Pike Lifts', targetSets: 1, targetReps: 10, restSeconds: 30 },
-      { id: 'b1-4', exerciseId: '65', exerciseName: 'Straight Leg Bridge on Swiss Ball', targetSets: 3, targetReps: 20, restSeconds: 30 },
-      { id: 'b1-5', exerciseId: '66', exerciseName: 'Single Leg Glute Bridge Hold', targetSets: 3, targetReps: 40, restSeconds: 30 },
-      { id: 'b1-6', exerciseId: '67', exerciseName: 'Single Leg Balance with Kettlebell Round the World', targetSets: 3, targetReps: 20, restSeconds: 30 },
-      { id: 'b1-7', exerciseId: '40', exerciseName: 'Drop Jump', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'b1-8', exerciseId: '68', exerciseName: 'Dumbbell Single Leg Romanian Deadlift', targetSets: 3, targetReps: 10, restSeconds: 60 },
-      { id: 'b1-9', exerciseId: '57', exerciseName: 'Flat Bench Press', targetSets: 3, targetReps: 10, restSeconds: 60 },
-      { id: 'b1-10', exerciseId: '29', exerciseName: 'Bulgarian Split Squat', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'b1-11', exerciseId: '31', exerciseName: 'Elevated Plank Row', targetSets: 3, targetReps: 10, restSeconds: 60 },
-      { id: 'b1-12', exerciseId: '32', exerciseName: 'Stair Climber', targetSets: 1, targetReps: 10, restSeconds: 0 },
+      { id: 'b1-1', exerciseId: '23', exerciseName: 'Ankle Pumps', targetSets: 1, targetReps: 20, restSeconds: 30, group: 'A' },
+      { id: 'b1-2', exerciseId: '24', exerciseName: 'Heel Drops', targetSets: 1, targetReps: 10, restSeconds: 30, group: 'A' },
+      { id: 'b1-3', exerciseId: '25', exerciseName: 'Pike Lifts', targetSets: 1, targetReps: 10, restSeconds: 30, group: 'A' },
+      { id: 'b1-4', exerciseId: '65', exerciseName: 'Straight Leg Bridge on Swiss Ball', targetSets: 3, targetReps: 20, restSeconds: 30, group: 'B' },
+      { id: 'b1-5', exerciseId: '66', exerciseName: 'Single Leg Glute Bridge Hold', targetSets: 3, targetReps: 40, restSeconds: 30, group: 'B' },
+      { id: 'b1-6', exerciseId: '67', exerciseName: 'Single Leg Balance with Kettlebell Round the World', targetSets: 3, targetReps: 20, restSeconds: 30, group: 'B' },
+      { id: 'b1-7', exerciseId: '40', exerciseName: 'Drop Jump', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'C' },
+      { id: 'b1-8', exerciseId: '68', exerciseName: 'Dumbbell Single Leg Romanian Deadlift', targetSets: 3, targetReps: 10, restSeconds: 60, group: 'D' },
+      { id: 'b1-9', exerciseId: '57', exerciseName: 'Flat Bench Press', targetSets: 3, targetReps: 10, restSeconds: 60, group: 'E' },
+      { id: 'b1-10', exerciseId: '29', exerciseName: 'Bulgarian Split Squat', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'F' },
+      { id: 'b1-11', exerciseId: '31', exerciseName: 'Elevated Plank Row', targetSets: 3, targetReps: 10, restSeconds: 60, group: 'F' },
+      { id: 'b1-12', exerciseId: '32', exerciseName: 'Stair Climber', targetSets: 1, targetReps: 10, restSeconds: 0, group: 'G' },
     ],
     createdAt: '2026-06-14T00:00:00.000Z',
     updatedAt: '2026-06-14T00:00:00.000Z',
@@ -399,19 +447,19 @@ const workoutTemplates: WorkoutTemplate[] = [
     isTemplate: true,
     category: 'PT Sessions',
     exercises: [
-      { id: 'b2-1', exerciseId: '33', exerciseName: 'Hip Mobility', targetSets: 1, targetReps: 16, restSeconds: 30 },
-      { id: 'b2-2', exerciseId: '34', exerciseName: 'Cat Cow', targetSets: 1, targetReps: 8, restSeconds: 30 },
-      { id: 'b2-3', exerciseId: '35', exerciseName: 'Prone Scorpion', targetSets: 1, targetReps: 8, restSeconds: 30 },
-      { id: 'b2-4', exerciseId: '36', exerciseName: 'Thoracic Rotations', targetSets: 1, targetReps: 8, restSeconds: 30 },
-      { id: 'b2-5', exerciseId: '26', exerciseName: 'Kettlebell Pullthrough', targetSets: 3, targetReps: 20, restSeconds: 0 },
-      { id: 'b2-6', exerciseId: '47', exerciseName: 'Side Plank', targetSets: 3, targetReps: 50, restSeconds: 0 },
-      { id: 'b2-7', exerciseId: '69', exerciseName: 'Split Squat Hold with Kettlebell Pass Around', targetSets: 3, targetReps: 20, restSeconds: 30 },
-      { id: 'b2-8', exerciseId: '70', exerciseName: 'Single Leg Drop Jump with Stabilisation', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'b2-9', exerciseId: '71', exerciseName: 'Box Step-Up', targetSets: 3, targetReps: 8, restSeconds: 30 },
-      { id: 'b2-10', exerciseId: '72', exerciseName: 'Pullover Crunch to Wall Throw', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'b2-11', exerciseId: '62', exerciseName: 'Single Leg Hip Thrust', targetSets: 3, targetReps: 10, restSeconds: 30 },
-      { id: 'b2-12', exerciseId: '73', exerciseName: "Landmine Meadow's Row to Power Press", targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'b2-13', exerciseId: '74', exerciseName: 'Farmers Walk', targetSets: 3, targetReps: 50, restSeconds: 60 },
+      { id: 'b2-1', exerciseId: '33', exerciseName: 'Hip Mobility', targetSets: 1, targetReps: 16, restSeconds: 30, group: 'A' },
+      { id: 'b2-2', exerciseId: '34', exerciseName: 'Cat Cow', targetSets: 1, targetReps: 8, restSeconds: 30, group: 'B' },
+      { id: 'b2-3', exerciseId: '35', exerciseName: 'Prone Scorpion', targetSets: 1, targetReps: 8, restSeconds: 30, group: 'C' },
+      { id: 'b2-4', exerciseId: '36', exerciseName: 'Thoracic Rotations', targetSets: 1, targetReps: 8, restSeconds: 30, group: 'D' },
+      { id: 'b2-5', exerciseId: '26', exerciseName: 'Kettlebell Pullthrough', targetSets: 3, targetReps: 20, restSeconds: 0, group: 'E' },
+      { id: 'b2-6', exerciseId: '47', exerciseName: 'Side Plank', targetSets: 3, targetReps: 50, restSeconds: 0, group: 'E' },
+      { id: 'b2-7', exerciseId: '69', exerciseName: 'Split Squat Hold with Kettlebell Pass Around', targetSets: 3, targetReps: 20, restSeconds: 30, group: 'E' },
+      { id: 'b2-8', exerciseId: '70', exerciseName: 'Single Leg Drop Jump with Stabilisation', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'F' },
+      { id: 'b2-9', exerciseId: '71', exerciseName: 'Box Step-Up', targetSets: 3, targetReps: 8, restSeconds: 30, group: 'F' },
+      { id: 'b2-10', exerciseId: '72', exerciseName: 'Pullover Crunch to Wall Throw', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'G' },
+      { id: 'b2-11', exerciseId: '62', exerciseName: 'Single Leg Hip Thrust', targetSets: 3, targetReps: 10, restSeconds: 30, group: 'G' },
+      { id: 'b2-12', exerciseId: '73', exerciseName: "Landmine Meadow's Row to Power Press", targetSets: 3, targetReps: 8, restSeconds: 60, group: 'H' },
+      { id: 'b2-13', exerciseId: '74', exerciseName: 'Farmers Walk', targetSets: 3, targetReps: 50, restSeconds: 60, group: 'H' },
     ],
     createdAt: '2026-06-14T00:00:00.000Z',
     updatedAt: '2026-06-14T00:00:00.000Z',
@@ -423,16 +471,16 @@ const workoutTemplates: WorkoutTemplate[] = [
     isTemplate: true,
     category: 'PT Sessions',
     exercises: [
-      { id: 'c1-1', exerciseId: '75', exerciseName: 'Forward Plank on Swiss Ball', targetSets: 3, targetReps: 60, restSeconds: 30 },
-      { id: 'c1-2', exerciseId: '76', exerciseName: 'Side Plank Clamshell', targetSets: 3, targetReps: 12, restSeconds: 30 },
-      { id: 'c1-3', exerciseId: '77', exerciseName: 'Arch Body Hold', targetSets: 3, targetReps: 50, restSeconds: 30 },
-      { id: 'c1-4', exerciseId: '78', exerciseName: 'Pogo Hop', targetSets: 3, targetReps: 12, restSeconds: 45 },
-      { id: 'c1-5', exerciseId: '79', exerciseName: 'Drop Jump to Counter Movement Jump with Stabilisation', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'c1-6', exerciseId: '12', exerciseName: 'Leg Press', targetSets: 5, targetReps: 8, restSeconds: 90 },
-      { id: 'c1-7', exerciseId: '28', exerciseName: 'Romanian Deadlift', targetSets: 4, targetReps: 10, restSeconds: 90 },
-      { id: 'c1-8', exerciseId: '19', exerciseName: 'Push-ups', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'c1-9', exerciseId: '13', exerciseName: 'Lat Pulldown', targetSets: 5, targetReps: 8, restSeconds: 60 },
-      { id: 'c1-10', exerciseId: '32', exerciseName: 'Stair Climber', targetSets: 1, targetReps: 10, restSeconds: 0 },
+      { id: 'c1-1', exerciseId: '75', exerciseName: 'Forward Plank on Swiss Ball', targetSets: 3, targetReps: 60, restSeconds: 30, group: 'A' },
+      { id: 'c1-2', exerciseId: '76', exerciseName: 'Side Plank Clamshell', targetSets: 3, targetReps: 12, restSeconds: 30, group: 'A' },
+      { id: 'c1-3', exerciseId: '77', exerciseName: 'Arch Body Hold', targetSets: 3, targetReps: 50, restSeconds: 30, group: 'A' },
+      { id: 'c1-4', exerciseId: '78', exerciseName: 'Pogo Hop', targetSets: 3, targetReps: 12, restSeconds: 45, group: 'B' },
+      { id: 'c1-5', exerciseId: '79', exerciseName: 'Drop Jump to Counter Movement Jump with Stabilisation', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'B' },
+      { id: 'c1-6', exerciseId: '12', exerciseName: 'Leg Press', targetSets: 5, targetReps: 8, restSeconds: 90, group: 'C' },
+      { id: 'c1-7', exerciseId: '28', exerciseName: 'Romanian Deadlift', targetSets: 4, targetReps: 10, restSeconds: 90, group: 'D' },
+      { id: 'c1-8', exerciseId: '19', exerciseName: 'Push-ups', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'E' },
+      { id: 'c1-9', exerciseId: '13', exerciseName: 'Lat Pulldown', targetSets: 5, targetReps: 8, restSeconds: 60, group: 'F' },
+      { id: 'c1-10', exerciseId: '32', exerciseName: 'Stair Climber', targetSets: 1, targetReps: 10, restSeconds: 0, group: 'G' },
     ],
     createdAt: '2026-06-14T00:00:00.000Z',
     updatedAt: '2026-06-14T00:00:00.000Z',
@@ -444,16 +492,16 @@ const workoutTemplates: WorkoutTemplate[] = [
     isTemplate: true,
     category: 'PT Sessions',
     exercises: [
-      { id: 'c2-1', exerciseId: '27', exerciseName: 'Hollow Body Hold', targetSets: 3, targetReps: 40, restSeconds: 30 },
-      { id: 'c2-2', exerciseId: '38', exerciseName: 'Copenhagen Plank', targetSets: 3, targetReps: 40, restSeconds: 30 },
-      { id: 'c2-3', exerciseId: '80', exerciseName: 'Glute Bridge March', targetSets: 3, targetReps: 20, restSeconds: 30 },
-      { id: 'c2-4', exerciseId: '81', exerciseName: 'Single Leg Balance on Upturned Bosu', targetSets: 2, targetReps: 60, restSeconds: 30 },
-      { id: 'c2-5', exerciseId: '82', exerciseName: 'Single Leg Step Down', targetSets: 2, targetReps: 12, restSeconds: 30 },
-      { id: 'c2-6', exerciseId: '68', exerciseName: 'Dumbbell Single Leg Romanian Deadlift', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'c2-7', exerciseId: '83', exerciseName: 'Deficit Bulgarian Split Squat', targetSets: 3, targetReps: 8, restSeconds: 60 },
-      { id: 'c2-8', exerciseId: '62', exerciseName: 'Single Leg Hip Thrust', targetSets: 3, targetReps: 12, restSeconds: 45 },
-      { id: 'c2-9', exerciseId: '53', exerciseName: 'Seated Row', targetSets: 3, targetReps: 10, restSeconds: 60 },
-      { id: 'c2-10', exerciseId: '48', exerciseName: 'Shoulder Press', targetSets: 3, targetReps: 12, restSeconds: 60 },
+      { id: 'c2-1', exerciseId: '27', exerciseName: 'Hollow Body Hold', targetSets: 3, targetReps: 40, restSeconds: 30, group: 'A' },
+      { id: 'c2-2', exerciseId: '38', exerciseName: 'Copenhagen Plank', targetSets: 3, targetReps: 40, restSeconds: 30, group: 'A' },
+      { id: 'c2-3', exerciseId: '80', exerciseName: 'Glute Bridge March', targetSets: 3, targetReps: 20, restSeconds: 30, group: 'A' },
+      { id: 'c2-4', exerciseId: '81', exerciseName: 'Single Leg Balance on Upturned Bosu', targetSets: 2, targetReps: 60, restSeconds: 30, group: 'B' },
+      { id: 'c2-5', exerciseId: '82', exerciseName: 'Single Leg Step Down', targetSets: 2, targetReps: 12, restSeconds: 30, group: 'B' },
+      { id: 'c2-6', exerciseId: '68', exerciseName: 'Dumbbell Single Leg Romanian Deadlift', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'C' },
+      { id: 'c2-7', exerciseId: '83', exerciseName: 'Deficit Bulgarian Split Squat', targetSets: 3, targetReps: 8, restSeconds: 60, group: 'C' },
+      { id: 'c2-8', exerciseId: '62', exerciseName: 'Single Leg Hip Thrust', targetSets: 3, targetReps: 12, restSeconds: 45, group: 'D' },
+      { id: 'c2-9', exerciseId: '53', exerciseName: 'Seated Row', targetSets: 3, targetReps: 10, restSeconds: 60, group: 'E' },
+      { id: 'c2-10', exerciseId: '48', exerciseName: 'Shoulder Press', targetSets: 3, targetReps: 12, restSeconds: 60, group: 'E' },
     ],
     createdAt: '2026-06-14T00:00:00.000Z',
     updatedAt: '2026-06-14T00:00:00.000Z',

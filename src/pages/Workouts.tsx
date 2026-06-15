@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, X, GripVertical, Play, Pencil, ChevronDown, ChevronRight, BookOpen, Copy } from 'lucide-react';
+import { Plus, Trash2, X, GripVertical, Play, Pencil, ChevronDown, ChevronRight, BookOpen, Copy, Link2, Link2Off } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutExercise, Exercise, WorkoutTemplate } from '../utils/storage';
-import { getWorkouts, saveWorkout, deleteWorkout, getExercises, getWorkoutTemplates, getTimedExerciseIds, formatCount } from '../utils/storage';
+import { getWorkouts, saveWorkout, deleteWorkout, getExercises, getWorkoutTemplates, getTimedExerciseIds, getExerciseGroups, formatCount } from '../utils/storage';
 
 export default function Workouts() {
   const navigate = useNavigate();
@@ -117,6 +117,34 @@ export default function Workouts() {
     setFormExercises(newExercises);
   }
 
+  // Whether an exercise is in the same circuit as the one above it
+  function isLinkedToAbove(index: number): boolean {
+    if (index === 0) return false;
+    const g = formExercises[index].group;
+    return !!g && g === formExercises[index - 1].group;
+  }
+
+  // Join an exercise into a circuit with the exercise above it
+  function linkWithAbove(index: number) {
+    if (index === 0) return;
+    const newExercises = [...formExercises];
+    const prev = newExercises[index - 1];
+    let groupKey = prev.group;
+    if (!groupKey) {
+      groupKey = prev.id; // start a new circuit keyed by the first exercise's id
+      newExercises[index - 1] = { ...prev, group: groupKey };
+    }
+    newExercises[index] = { ...newExercises[index], group: groupKey };
+    setFormExercises(newExercises);
+  }
+
+  // Split an exercise out of its circuit (back to standing on its own)
+  function unlinkFromAbove(index: number) {
+    const newExercises = [...formExercises];
+    newExercises[index] = { ...newExercises[index], group: undefined };
+    setFormExercises(newExercises);
+  }
+
   function importTemplate(template: WorkoutTemplate) {
     const newWorkout: Workout = {
       id: uuid(),
@@ -212,21 +240,34 @@ export default function Workouts() {
                         <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--color-text-secondary)' }}>
                           EXERCISES
                         </div>
-                        {template.exercises.map((ex, idx) => (
-                          <div
-                            key={ex.id}
-                            style={{
-                              fontSize: 13,
-                              padding: '6px 0',
-                              borderBottom: idx < template.exercises.length - 1 ? '1px solid var(--color-border)' : 'none',
-                            }}
-                          >
-                            <span style={{ fontWeight: 500 }}>{ex.exerciseName}</span>
-                            <span style={{ color: 'var(--color-text-secondary)', marginLeft: 8 }}>
-                              {ex.targetSets} × {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true) : ex.targetReps}
-                            </span>
-                          </div>
-                        ))}
+                        {(() => {
+                          const subLabels: Record<number, string> = {};
+                          getExerciseGroups(template.exercises).forEach(g =>
+                            g.items.forEach(it => { subLabels[it.index] = it.subLabel; })
+                          );
+                          return template.exercises.map((ex, idx) => (
+                            <div
+                              key={ex.id}
+                              style={{
+                                fontSize: 13,
+                                padding: '6px 0',
+                                display: 'flex',
+                                gap: 8,
+                                borderBottom: idx < template.exercises.length - 1 ? '1px solid var(--color-border)' : 'none',
+                              }}
+                            >
+                              <span style={{ fontWeight: 700, color: 'var(--color-primary, #6366f1)', minWidth: 24 }}>
+                                {subLabels[idx]}
+                              </span>
+                              <span style={{ flex: 1 }}>
+                                <span style={{ fontWeight: 500 }}>{ex.exerciseName}</span>
+                                <span style={{ color: 'var(--color-text-secondary)', marginLeft: 8 }}>
+                                  {ex.targetSets} × {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true) : ex.targetReps}
+                                </span>
+                              </span>
+                            </div>
+                          ));
+                        })()}
                       </div>
                       <button
                         className="btn btn-primary btn-block btn-sm"
@@ -283,6 +324,11 @@ export default function Workouts() {
   }
 
   // Form view
+  // Circuit labels (A, B1, B2, ...) for the exercises being edited
+  const formGroups = getExerciseGroups(formExercises);
+  const subLabelByIndex: Record<number, string> = {};
+  formGroups.forEach(g => g.items.forEach(it => { subLabelByIndex[it.index] = it.subLabel; }));
+
   return (
     <div className="page">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -331,33 +377,63 @@ export default function Workouts() {
             <p>No exercises yet. Add exercises to your workout.</p>
           </div>
         ) : (
-          <div className="list">
-            {formExercises.map((ex, index) => (
-              <div key={ex.id} className="list-item">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <button
-                      className="btn btn-ghost"
-                      style={{ padding: 2 }}
-                      onClick={() => moveExercise(index, 'up')}
-                      disabled={index === 0}
-                    >
-                      <GripVertical size={14} />
-                    </button>
-                  </div>
-                  <div className="list-item-content">
-                    <div className="list-item-title">{ex.exerciseName}</div>
-                    <div className="list-item-subtitle">
-                      {ex.targetSets} sets x {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true) : `${ex.targetReps} reps`} • {ex.restSeconds}s rest
+          <>
+            <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
+              Tap the chain icon to link an exercise into a circuit (alternating
+              sets) with the one above it.
+            </p>
+            <div className="list">
+              {formExercises.map((ex, index) => {
+                const linked = isLinkedToAbove(index);
+                return (
+                  <div key={ex.id} className="list-item">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <button
+                          className="btn btn-ghost"
+                          style={{ padding: 2 }}
+                          onClick={() => moveExercise(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <GripVertical size={14} />
+                        </button>
+                      </div>
+                      <span style={{
+                        fontWeight: 700,
+                        fontSize: 13,
+                        color: 'var(--color-primary, #6366f1)',
+                        minWidth: 26,
+                        textAlign: 'center',
+                      }}>
+                        {subLabelByIndex[index]}
+                      </span>
+                      <div className="list-item-content">
+                        <div className="list-item-title">{ex.exerciseName}</div>
+                        <div className="list-item-subtitle">
+                          {ex.targetSets} sets x {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true) : `${ex.targetReps} reps`} • {ex.restSeconds}s rest
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {index > 0 && (
+                        <button
+                          className="btn btn-ghost"
+                          title={linked ? 'Split from circuit above' : 'Link into a circuit with the exercise above'}
+                          onClick={() => linked ? unlinkFromAbove(index) : linkWithAbove(index)}
+                          style={{ color: linked ? 'var(--color-primary, #6366f1)' : undefined }}
+                        >
+                          {linked ? <Link2Off size={18} /> : <Link2 size={18} />}
+                        </button>
+                      )}
+                      <button className="btn btn-ghost" onClick={() => removeExercise(ex.id)}>
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   </div>
-                </div>
-                <button className="btn btn-ghost" onClick={() => removeExercise(ex.id)}>
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
