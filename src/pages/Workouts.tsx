@@ -163,6 +163,35 @@ export default function Workouts() {
     setExpandedTemplate(null);
   }
 
+  // Add or refresh every PT session in one tap. Sessions already imported are
+  // updated in place (matched by name) so existing workouts pick up the circuit
+  // grouping without creating duplicates and without breaking history links.
+  function importAllTemplates() {
+    if (!confirm(`Add or update all ${templates.length} PT sessions in My Workouts? Already-imported ones will be refreshed with the new circuits.`)) {
+      return;
+    }
+    const existing = getWorkouts();
+    templates.forEach(template => {
+      const matches = existing.filter(w => w.name === template.name);
+      const targets = matches.length > 0 ? matches : [null];
+      targets.forEach(match => {
+        const workout: Workout = {
+          id: match?.id || uuid(),
+          name: template.name,
+          description: template.description,
+          exercises: template.exercises.map(ex => ({ ...ex, id: uuid() })),
+          createdAt: match?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        saveWorkout(workout);
+      });
+    });
+    loadData();
+    setShowTemplates(false);
+    setExpandedTemplate(null);
+    alert(`Done! All ${templates.length} sessions are in My Workouts with their circuits.`);
+  }
+
   function toggleTemplateExpand(templateId: string) {
     setExpandedTemplate(expandedTemplate === templateId ? null : templateId);
   }
@@ -201,8 +230,17 @@ export default function Workouts() {
           </button>
 
           {showTemplates && (
-            <div className="list" style={{ background: 'var(--color-surface)', borderRadius: 8 }}>
-              {templates.map(template => (
+            <>
+              <button
+                className="btn btn-primary btn-block btn-sm"
+                onClick={importAllTemplates}
+                style={{ marginBottom: 12 }}
+              >
+                <Copy size={16} />
+                Import all {templates.length} sessions
+              </button>
+              <div className="list" style={{ background: 'var(--color-surface)', borderRadius: 8 }}>
+                {templates.map(template => (
                 <div key={template.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <div
                     className="list-item"
@@ -282,8 +320,9 @@ export default function Workouts() {
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
