@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { TrendingUp, Trophy, Flame } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { TrendingUp, Trophy, Flame, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/storage';
@@ -172,6 +172,9 @@ export default function Progress() {
             </div>
           </div>
 
+          {/* Workout calendar */}
+          <WorkoutCalendar logs={logs} />
+
           {/* Progress Chart */}
           {exerciseProgress.length > 0 && (
             <div style={{ marginBottom: 24 }}>
@@ -254,6 +257,135 @@ export default function Progress() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+/* ---------- Workout calendar ---------- */
+
+// Local date key (YYYY-MM-DD) so days line up with the user's timezone,
+// not UTC — a late-evening workout should land on the right day.
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`;
+}
+
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function WorkoutCalendar({ logs }: { logs: WorkoutLog[] }) {
+  // How many workouts happened on each day.
+  const countByDay = useMemo(() => {
+    const map: Record<string, number> = {};
+    logs.forEach((l) => {
+      const k = dayKey(new Date(l.date));
+      map[k] = (map[k] ?? 0) + 1;
+    });
+    return map;
+  }, [logs]);
+
+  const today = new Date();
+  const todayKey = dayKey(today);
+  const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() });
+
+  const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  // Build the grid: leading blanks (Mon-start) then each day of the month.
+  const cells = useMemo(() => {
+    const first = new Date(view.year, view.month, 1);
+    const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
+    // getDay(): 0=Sun..6=Sat → shift so Monday is the first column.
+    const lead = (first.getDay() + 6) % 7;
+    const out: (Date | null)[] = [];
+    for (let i = 0; i < lead; i++) out.push(null);
+    for (let d = 1; d <= daysInMonth; d++) out.push(new Date(view.year, view.month, d));
+    return out;
+  }, [view]);
+
+  const monthWorkouts = useMemo(
+    () =>
+      Object.entries(countByDay).reduce((sum, [k, n]) => {
+        const [y, m] = k.split('-').map(Number);
+        return y === view.year && m === view.month + 1 ? sum + n : sum;
+      }, 0),
+    [countByDay, view]
+  );
+
+  function step(delta: number) {
+    setView((v) => {
+      const m = v.month + delta;
+      return { year: v.year + Math.floor(m / 12), month: ((m % 12) + 12) % 12 };
+    });
+  }
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <CalendarDays size={18} />
+        <h3 style={{ fontSize: 16, fontWeight: 600 }}>Workout calendar</h3>
+      </div>
+
+      <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' }}>
+        {/* Month navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <button className="btn btn-ghost" onClick={() => step(-1)} aria-label="Previous month" style={{ padding: 6 }}>
+            <ChevronLeft size={20} />
+          </button>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontWeight: 600 }}>{monthLabel}</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
+              {monthWorkouts === 0
+                ? 'No workouts'
+                : `${monthWorkouts} workout${monthWorkouts === 1 ? '' : 's'}`}
+            </div>
+          </div>
+          <button className="btn btn-ghost" onClick={() => step(1)} aria-label="Next month" style={{ padding: 6 }}>
+            <ChevronRight size={20} />
+          </button>
+        </div>
+
+        {/* Weekday header */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+          {WEEKDAY_LABELS.map((w) => (
+            <div key={w} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#9ca3af' }}>
+              {w}
+            </div>
+          ))}
+        </div>
+
+        {/* Day grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+          {cells.map((d, i) => {
+            if (!d) return <div key={`b${i}`} />;
+            const k = dayKey(d);
+            const did = countByDay[k] > 0;
+            const isToday = k === todayKey;
+            return (
+              <div
+                key={k}
+                title={did ? `${countByDay[k]} workout${countByDay[k] === 1 ? '' : 's'}` : undefined}
+                style={{
+                  aspectRatio: '1 / 1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 13,
+                  fontWeight: did ? 700 : 400,
+                  borderRadius: '50%',
+                  color: did ? 'white' : '#374151',
+                  background: did ? '#6366f1' : 'transparent',
+                  border: isToday && !did ? '1.5px solid #6366f1' : '1.5px solid transparent',
+                }}
+              >
+                {d.getDate()}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
