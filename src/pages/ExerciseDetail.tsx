@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, TrendingUp, Target, Zap } from 'lucide-react';
+import { ChevronLeft, TrendingUp, Target, Zap, Youtube } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Exercise, ExerciseHistoryEntry } from '../utils/storage';
-import { getExercises, saveExercise, getExerciseHistory, getAverageEffort, getLastWeightForExercise, formatCount } from '../utils/storage';
+import { getExercises, saveExercise, getExerciseHistory, getAverageEffort, getLastWeightForExercise, formatCount, getExerciseVideoUrl } from '../utils/storage';
 
 export default function ExerciseDetail() {
   const { exerciseId } = useParams();
@@ -18,6 +18,7 @@ export default function ExerciseDetail() {
   const [defaultWeight, setDefaultWeight] = useState<number>(0);
   const [weightIncrement, setWeightIncrement] = useState<number>(2.5);
   const [isTimed, setIsTimed] = useState<boolean>(false);
+  const [videoUrl, setVideoUrl] = useState<string>('');
 
   useEffect(() => {
     if (!exerciseId) return;
@@ -29,6 +30,7 @@ export default function ExerciseDetail() {
       setDefaultWeight(found.defaultWeight || 0);
       setWeightIncrement(found.weightIncrement || 2.5);
       setIsTimed(found.isTimed || false);
+      setVideoUrl(found.videoUrl || '');
     }
 
     setHistory(getExerciseHistory(exerciseId));
@@ -44,6 +46,7 @@ export default function ExerciseDetail() {
       defaultWeight: defaultWeight || undefined,
       weightIncrement: weightIncrement || 2.5,
       isTimed: isTimed || undefined,
+      videoUrl: videoUrl.trim() || undefined,
     };
 
     saveExercise(updated);
@@ -84,10 +87,17 @@ export default function ExerciseDetail() {
         <button className="btn btn-ghost" onClick={() => navigate('/exercises')}>
           <ChevronLeft size={24} />
         </button>
-        <div>
+        <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{exercise.name}</h1>
           <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>{exercise.muscleGroup}</p>
         </div>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => window.open(getExerciseVideoUrl(exercise), '_blank', 'noopener')}
+          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <Youtube size={18} style={{ color: '#ef4444' }} /> How to
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -240,6 +250,20 @@ export default function ExerciseDetail() {
             </div>
           </>
         )}
+
+        <div className="form-group">
+          <label className="form-label">Video URL (optional)</label>
+          <input
+            type="url"
+            className="form-input"
+            value={videoUrl}
+            onChange={e => setVideoUrl(e.target.value)}
+            placeholder="https://youtube.com/..."
+          />
+          <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+            Leave empty to auto-search YouTube by exercise name
+          </p>
+        </div>
 
         <button className="btn btn-primary btn-block" onClick={handleSave}>
           Save Settings

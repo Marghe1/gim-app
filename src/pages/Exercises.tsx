@@ -45,6 +45,7 @@ export default function Exercises() {
   const [formName, setFormName] = useState('');
   const [formMuscleGroup, setFormMuscleGroup] = useState('Legs');
   const [formNotes, setFormNotes] = useState('');
+  const [formVideoUrl, setFormVideoUrl] = useState('');
 
   // Quick setup mode
   const [showQuickSetup, setShowQuickSetup] = useState(false);
@@ -79,6 +80,7 @@ export default function Exercises() {
     setFormName('');
     setFormMuscleGroup('Legs');
     setFormNotes('');
+    setFormVideoUrl('');
     setShowModal(true);
   }
 
@@ -87,6 +89,7 @@ export default function Exercises() {
     setFormName(exercise.name);
     setFormMuscleGroup(exercise.muscleGroup);
     setFormNotes(exercise.notes || '');
+    setFormVideoUrl(exercise.videoUrl || '');
     setShowModal(true);
   }
 
@@ -94,10 +97,12 @@ export default function Exercises() {
     if (!formName.trim()) return;
 
     const exercise: Exercise = {
+      ...(editingExercise ?? {}),
       id: editingExercise?.id || uuid(),
       name: formName.trim(),
       muscleGroup: formMuscleGroup,
       notes: formNotes.trim() || undefined,
+      videoUrl: formVideoUrl.trim() || undefined,
     };
 
     saveExercise(exercise);
@@ -392,6 +397,20 @@ export default function Exercises() {
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
               />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Video URL (optional)</label>
+              <input
+                type="url"
+                className="form-input"
+                placeholder="https://youtube.com/..."
+                value={formVideoUrl}
+                onChange={e => setFormVideoUrl(e.target.value)}
+              />
+              <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                Leave empty to auto-search YouTube by exercise name
+              </p>
             </div>
 
             <div className="modal-actions">

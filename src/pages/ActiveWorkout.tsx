@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, Play, Pause, RotateCcw, Check, Minus, Plus, Clock, SkipForward, Trash2, MessageSquare } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, Check, Minus, Plus, Clock, SkipForward, Trash2, MessageSquare, Youtube } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutLog, ExerciseLog, SetLog } from '../utils/storage';
 import {
   getWorkouts,
   saveWorkoutLog,
   getExercises,
+  getExerciseVideoUrl,
   getLastWeightForExercise,
   getLastNoteForExercise,
   getExercisePersonalBest,
@@ -75,6 +76,9 @@ export default function ActiveWorkout() {
   // Exercise ids that are time-based (seconds instead of reps)
   const [timedExercises, setTimedExercises] = useState<Set<string>>(new Set());
 
+  // Optional per-exercise video overrides (exerciseId -> specific YouTube URL)
+  const [videoOverrides, setVideoOverrides] = useState<{ [id: string]: string | undefined }>({});
+
   // Personal-best records (snapshot taken before this workout). Mutated in-place
   // as new records are hit so later sets compare against the running best.
   const personalBests = useRef<{ [exerciseId: string]: { maxWeight: number; maxReps: number } }>({});
@@ -98,6 +102,7 @@ export default function ActiveWorkout() {
       // Get exercise library for default weights
       const allExercises = getExercises();
       setTimedExercises(new Set(allExercises.filter(e => e.isTimed).map(e => e.id)));
+      setVideoOverrides(Object.fromEntries(allExercises.map(e => [e.id, e.videoUrl])));
 
       // Load previous notes for all exercises
       const notes: { [exerciseId: string]: string | null } = {};
@@ -591,6 +596,39 @@ export default function ActiveWorkout() {
           textAlign: 'center',
           position: 'relative',
         }}>
+          {/* How-to video button - top left */}
+          {currentExercise && (
+            <button
+              onClick={() =>
+                window.open(
+                  getExerciseVideoUrl({
+                    name: currentExercise.exerciseName,
+                    videoUrl: videoOverrides[currentExercise.exerciseId],
+                  }),
+                  '_blank',
+                  'noopener'
+                )
+              }
+              title="How to"
+              style={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                background: isCurrentSkipped ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: 10,
+                padding: 16,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+              }}
+            >
+              <Youtube size={18} style={{ color: isCurrentSkipped ? '#6b7280' : 'white' }} />
+            </button>
+          )}
+
           {/* Note button - top right */}
           {!isCurrentSkipped && (
             <button

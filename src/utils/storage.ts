@@ -7,7 +7,15 @@ export type Exercise = {
   defaultWeight?: number;      // Starting weight in kg
   weightIncrement?: number;    // How much to increase (default 2.5kg)
   isTimed?: boolean;           // Measured in seconds (holds, planks) instead of reps
+  videoUrl?: string;           // Optional specific YouTube link; otherwise we search by name
 };
+
+// Where to find a "how to" video for an exercise: a specific link if the user
+// set one, otherwise a YouTube search for the exercise name.
+export function getExerciseVideoUrl(ex: { name: string; videoUrl?: string }): string {
+  if (ex.videoUrl && ex.videoUrl.trim()) return ex.videoUrl.trim();
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' how to')}`;
+}
 
 // Format a rep count or hold duration with its unit.
 export function formatCount(value: number, isTimed?: boolean): string {
