@@ -503,7 +503,9 @@ function CompareModal({
           </div>
         ) : (
           <>
-            {/* Slider viewer: "after" on top, revealed from the left as the divider moves */}
+            {/* Slider viewer: "after" fills the frame; "before" sits on top,
+                clipped to the left of the divider — so left = Before, right = After,
+                matching the labels and date pickers below. */}
             <div
               style={{
                 position: 'relative',
@@ -517,10 +519,10 @@ function CompareModal({
                 userSelect: 'none',
               }}
             >
-              {before && urls[before.id] && (
+              {after && urls[after.id] && (
                 <img
-                  src={urls[before.id]}
-                  alt="Before"
+                  src={urls[after.id]}
+                  alt="After"
                   style={{
                     position: 'absolute',
                     inset: 0,
@@ -530,10 +532,10 @@ function CompareModal({
                   }}
                 />
               )}
-              {after && urls[after.id] && (
+              {before && urls[before.id] && (
                 <img
-                  src={urls[after.id]}
-                  alt="After"
+                  src={urls[before.id]}
+                  alt="Before"
                   style={{
                     position: 'absolute',
                     inset: 0,
