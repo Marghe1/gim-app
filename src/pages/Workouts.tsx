@@ -45,6 +45,8 @@ export default function Workouts() {
     setFormName('');
     setFormDescription('');
     setFormExercises([]);
+    setShowTemplates(false);
+    setExpandedTemplate(null);
     setShowForm(true);
   }
 
@@ -145,20 +147,13 @@ export default function Workouts() {
     setFormExercises(newExercises);
   }
 
-  function importTemplate(template: WorkoutTemplate) {
-    const newWorkout: Workout = {
-      id: uuid(),
-      name: template.name,
-      description: template.description,
-      exercises: template.exercises.map(ex => ({
-        ...ex,
-        id: uuid(), // Generate new IDs for exercises
-      })),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    saveWorkout(newWorkout);
-    loadData();
+  // Load a template into the New Workout form so it can be reviewed, tweaked
+  // and saved (rather than saved straight away). Fresh ids keep it independent
+  // from the original template.
+  function useTemplate(template: WorkoutTemplate) {
+    setFormName(template.name);
+    setFormDescription(template.description || '');
+    setFormExercises(template.exercises.map(ex => ({ ...ex, id: uuid() })));
     setShowTemplates(false);
     setExpandedTemplate(null);
   }
@@ -189,6 +184,7 @@ export default function Workouts() {
     loadData();
     setShowTemplates(false);
     setExpandedTemplate(null);
+    setShowForm(false);
     alert(`Done! All ${templates.length} sessions are in My Workouts with their circuits.`);
   }
 
@@ -210,7 +206,62 @@ export default function Workouts() {
           Create Workout
         </button>
 
-        {/* Template Library Section */}
+        {workouts.length === 0 ? (
+          <div className="empty-state">
+            <p>No workout templates yet. Create your first one!</p>
+          </div>
+        ) : (
+          <div className="list">
+            {workouts.map(workout => (
+              <div key={workout.id} className="list-item">
+                <div className="list-item-content">
+                  <div className="list-item-title">{workout.name}</div>
+                  <div className="list-item-subtitle">
+                    {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="list-item-actions" style={{ gap: 8 }}>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => navigate(`/workout/${workout.id}`)}
+                  >
+                    <Play size={16} /> Start
+                  </button>
+                  <button className="btn btn-ghost" onClick={() => openEditForm(workout)}>
+                    <Pencil size={18} />
+                  </button>
+                  <button className="btn btn-ghost" onClick={() => handleDeleteWorkout(workout.id)}>
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Form view
+  // Circuit labels (A, B1, B2, ...) for the exercises being edited
+  const formGroups = getExerciseGroups(formExercises);
+  const subLabelByIndex: Record<number, string> = {};
+  formGroups.forEach(g => g.items.forEach(it => { subLabelByIndex[it.index] = it.subLabel; }));
+
+  return (
+    <div className="page">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 className="page-title">{editingWorkout ? 'Edit Workout' : 'New Workout'}</h1>
+          <p className="page-subtitle">Build your circuit template</p>
+        </div>
+        <button className="btn btn-ghost" onClick={() => setShowForm(false)}>
+          <X size={24} />
+        </button>
+      </div>
+
+      {/* Start from a template (only when creating a new workout) */}
+      {!editingWorkout && (
         <div style={{ marginBottom: 24 }}>
           <button
             className="btn btn-secondary btn-block"
@@ -224,7 +275,7 @@ export default function Workouts() {
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <BookOpen size={18} />
-              Browse Templates ({templates.length})
+              Start from a template ({templates.length})
             </span>
             {showTemplates ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </button>
@@ -311,7 +362,7 @@ export default function Workouts() {
                         className="btn btn-primary btn-block btn-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          importTemplate(template);
+                          useTemplate(template);
                         }}
                       >
                         <Copy size={16} />
@@ -325,60 +376,7 @@ export default function Workouts() {
             </>
           )}
         </div>
-
-        {workouts.length === 0 ? (
-          <div className="empty-state">
-            <p>No workout templates yet. Create your first one!</p>
-          </div>
-        ) : (
-          <div className="list">
-            {workouts.map(workout => (
-              <div key={workout.id} className="list-item">
-                <div className="list-item-content">
-                  <div className="list-item-title">{workout.name}</div>
-                  <div className="list-item-subtitle">
-                    {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
-                  </div>
-                </div>
-                <div className="list-item-actions" style={{ gap: 8 }}>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => navigate(`/workout/${workout.id}`)}
-                  >
-                    <Play size={16} /> Start
-                  </button>
-                  <button className="btn btn-ghost" onClick={() => openEditForm(workout)}>
-                    <Pencil size={18} />
-                  </button>
-                  <button className="btn btn-ghost" onClick={() => handleDeleteWorkout(workout.id)}>
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Form view
-  // Circuit labels (A, B1, B2, ...) for the exercises being edited
-  const formGroups = getExerciseGroups(formExercises);
-  const subLabelByIndex: Record<number, string> = {};
-  formGroups.forEach(g => g.items.forEach(it => { subLabelByIndex[it.index] = it.subLabel; }));
-
-  return (
-    <div className="page">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h1 className="page-title">{editingWorkout ? 'Edit Workout' : 'New Workout'}</h1>
-          <p className="page-subtitle">Build your circuit template</p>
-        </div>
-        <button className="btn btn-ghost" onClick={() => setShowForm(false)}>
-          <X size={24} />
-        </button>
-      </div>
+      )}
 
       <div className="form-group">
         <label className="form-label">Workout Name</label>
