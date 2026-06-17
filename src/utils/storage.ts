@@ -227,6 +227,11 @@ const defaultExercises: Exercise[] = [
   { id: '81', name: 'Single Leg Balance on Upturned Bosu', muscleGroup: 'Core', isTimed: true },
   { id: '82', name: 'Single Leg Step Down', muscleGroup: 'Legs' },
   { id: '83', name: 'Deficit Bulgarian Split Squat', muscleGroup: 'Legs' },
+  // Warm-up / cool-down blocks added to the start and end of every template
+  { id: '84', name: 'Cardio Warm-up', muscleGroup: 'Cardio', isTimed: true },
+  { id: '85', name: 'Dynamic Stretching', muscleGroup: 'Warm-up', isTimed: true },
+  { id: '86', name: 'Cardio Cool-down', muscleGroup: 'Cardio', isTimed: true },
+  { id: '87', name: 'Full Body Stretching', muscleGroup: 'Stretching', isTimed: true },
 ];
 
 export function getWorkouts(): Workout[] {
@@ -336,8 +341,28 @@ export type WorkoutTemplate = Workout & {
   category: string;
 };
 
-// Pre-built workout templates from PT sessions (based on WoDup screenshots)
-const workoutTemplates: WorkoutTemplate[] = [
+// Every template opens with a cardio + stretching warm-up and closes with a
+// cardio + stretching cool-down. Durations are stored as seconds (these are
+// timed exercises), so 300 shows as "5m". `prefix` keeps the ids unique per
+// template (they are re-generated anyway when a template is imported).
+function warmupBlock(prefix: string): WorkoutExercise[] {
+  return [
+    { id: `${prefix}-wu1`, exerciseId: '84', exerciseName: 'Cardio Warm-up', targetSets: 1, targetReps: 300, restSeconds: 30, group: 'Warm-up' },
+    { id: `${prefix}-wu2`, exerciseId: '85', exerciseName: 'Dynamic Stretching', targetSets: 1, targetReps: 300, restSeconds: 60, group: 'Warm-up' },
+  ];
+}
+
+function cooldownBlock(prefix: string): WorkoutExercise[] {
+  return [
+    { id: `${prefix}-cd1`, exerciseId: '86', exerciseName: 'Cardio Cool-down', targetSets: 1, targetReps: 300, restSeconds: 30, group: 'Cool-down' },
+    { id: `${prefix}-cd2`, exerciseId: '87', exerciseName: 'Full Body Stretching', targetSets: 1, targetReps: 300, restSeconds: 0, group: 'Cool-down' },
+  ];
+}
+
+// Pre-built workout templates from PT sessions (based on WoDup screenshots).
+// Each template's exercise list is wrapped with the shared warm-up / cool-down
+// blocks (see withWarmupCooldown below the array).
+const rawWorkoutTemplates: WorkoutTemplate[] = [
   {
     id: 'template-a1',
     name: 'A1 - Lower Body & Core',
@@ -519,6 +544,13 @@ const workoutTemplates: WorkoutTemplate[] = [
     updatedAt: '2026-06-14T00:00:00.000Z',
   },
 ];
+
+// Wrap every template with the shared warm-up (start) and cool-down (end)
+// blocks. A stable per-template prefix keeps the inserted ids unique.
+const workoutTemplates: WorkoutTemplate[] = rawWorkoutTemplates.map(t => ({
+  ...t,
+  exercises: [...warmupBlock(t.id), ...t.exercises, ...cooldownBlock(t.id)],
+}));
 
 export function getWorkoutTemplates(): WorkoutTemplate[] {
   return workoutTemplates;

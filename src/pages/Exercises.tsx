@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid';
 import type { Exercise } from '../utils/storage';
 import { getExercises, saveExercise, deleteExercise } from '../utils/storage';
 
-const MUSCLE_GROUPS = ['All', 'Legs', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core', 'Full Body', 'Warm-up', 'Glutes', 'Cardio', 'Plyometrics'];
+const MUSCLE_GROUPS = ['All', 'Legs', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core', 'Full Body', 'Warm-up', 'Stretching', 'Glutes', 'Cardio', 'Plyometrics'];
 
 // Weight multipliers by muscle group (base weight at level 5)
 // These represent typical weights for each muscle group
@@ -19,6 +19,7 @@ const MUSCLE_GROUP_MULTIPLIERS: { [key: string]: number } = {
   'Full Body': 20,   // Kettlebell swings - medium
   'Core': 0,         // Bodyweight exercises
   'Warm-up': 0,      // Bodyweight/mobility
+  'Stretching': 0,   // Stretching/cool-down
   'Cardio': 0,       // No weight
   'Plyometrics': 0,  // Bodyweight jumps
 };
