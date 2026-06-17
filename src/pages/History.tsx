@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, Calendar, Timer, ChevronDown, ChevronUp, Trash2, MessageSquare, Plus } from 'lucide-react';
 import type { WorkoutLog } from '../utils/storage';
-import { getWorkoutLogs, deleteWorkoutLog, saveWorkoutLog, getTimedExerciseIds, formatCount } from '../utils/storage';
+import { getWorkoutLogs, deleteWorkoutLog, saveWorkoutLog, getTimedExerciseIds, formatCount, formatDuration } from '../utils/storage';
 
 // Which note is currently being edited: a workout-level note (exIndex null) or
 // a specific exercise note (exIndex = position in the log's exercises array).
@@ -59,13 +59,6 @@ export default function History() {
     saveWorkoutLog(updated);
     setEditing(null);
     loadLogs();
-  }
-
-  function formatDuration(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if (mins === 0) return `${secs}s`;
-    return `${mins}m ${secs}s`;
   }
 
   function formatDate(dateString: string): string {

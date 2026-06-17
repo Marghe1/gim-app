@@ -26,6 +26,18 @@ export function formatCount(value: number, isTimed?: boolean): string {
   return s === 0 ? `${m}m` : `${m}m ${s}s`;
 }
 
+// Format a workout duration (in seconds) in hours and minutes.
+// Examples: 45 -> "45s", 330 -> "5m 30s", 3930 -> "1h 5m".
+// Seconds are only shown under an hour so summaries stay short.
+export function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  return `${s}s`;
+}
+
 // Set of exercise ids that are time-based (holds, planks, balance, etc.)
 export function getTimedExerciseIds(): Set<string> {
   return new Set(getExercises().filter(e => e.isTimed).map(e => e.id));

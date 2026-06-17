@@ -15,6 +15,7 @@ import {
   getLastSameWorkoutPerformance,
   getProgressionSuggestions,
   formatCount,
+  formatDuration,
   type ProgressionSuggestion,
 } from '../utils/storage';
 
@@ -522,12 +523,6 @@ export default function ActiveWorkout() {
     skippedExercises.has(idx) || ex.sets.every(s => s.completed)
   );
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   // Animation styles
   const getSlideStyle = () => {
     if (!slideDirection) return {};
@@ -715,7 +710,7 @@ export default function ActiveWorkout() {
           <div style={{ fontSize: 16, fontWeight: 600 }}>{workout.name}</div>
           <div style={{ fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
             <Clock size={14} />
-            {formatTime(elapsedTime)}
+            {formatDuration(elapsedTime)}
           </div>
         </div>
         <div style={{ width: 40 }} />
@@ -1098,7 +1093,7 @@ export default function ActiveWorkout() {
               <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
               <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Workout Complete!</h2>
               <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
-                Duration: {formatTime(elapsedTime)} • {exerciseLogs.length - skippedExercises.size} exercises
+                Duration: {formatDuration(finishedLog?.duration ?? elapsedTime)} • {exerciseLogs.length - skippedExercises.size} exercises
                 {skippedExercises.size > 0 && ` (${skippedExercises.size} skipped)`}
               </p>
             </div>
