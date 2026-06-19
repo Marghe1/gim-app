@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Clock, Calendar, Timer, ChevronDown, ChevronUp, Trash2, MessageSquare, Plus } from 'lucide-react';
 import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, deleteWorkoutLog, saveWorkoutLog, getTimedExerciseIds, formatCount, formatDuration } from '../utils/storage';
@@ -9,6 +10,7 @@ import PageHero from '../components/PageHero';
 type EditTarget = { logId: string; exIndex: number | null };
 
 export default function History() {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
@@ -108,11 +110,19 @@ export default function History() {
       />
 
       <main className="home-sheet">
+      <button
+        className="btn btn-secondary btn-block"
+        onClick={() => navigate('/log-past')}
+        style={{ marginBottom: 16 }}
+      >
+        <Plus size={18} /> Add past workout
+      </button>
+
       {logs.length === 0 ? (
         <div className="empty-state">
           <Clock size={64} />
           <h3 className="empty-state-title">No workouts yet</h3>
-          <p>Complete a workout to see it here.</p>
+          <p>Complete a workout, or add a past one above, to see it here.</p>
         </div>
       ) : (
         <div>

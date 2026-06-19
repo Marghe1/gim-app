@@ -9,6 +9,7 @@ import History from './pages/History';
 import Progress from './pages/Progress';
 import ProgressPhotos from './pages/ProgressPhotos';
 import ActiveWorkout from './pages/ActiveWorkout';
+import LogPastWorkout from './pages/LogPastWorkout';
 import About from './pages/About';
 import UpdatePrompt from './components/UpdatePrompt';
 import FloatingTimer from './components/FloatingTimer';
@@ -39,6 +40,7 @@ function App() {
           <Route path="about" element={<About />} />
         </Route>
         <Route path="/workout/:workoutId" element={<ActiveWorkout />} />
+        <Route path="/log-past" element={<LogPastWorkout />} />
       </Routes>
     </BrowserRouter>
   );
