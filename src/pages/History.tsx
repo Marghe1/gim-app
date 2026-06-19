@@ -165,8 +165,7 @@ export default function History() {
                     onClick={() => toggleExpand(log.id)}
                   >
                     <div>
-                      <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {log.emoji && <span style={{ fontSize: 20 }}>{log.emoji}</span>}
+                      <div style={{ fontWeight: 600 }}>
                         {log.workoutName}
                       </div>
                       <div style={{ fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
