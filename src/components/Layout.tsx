@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, ClipboardList, Clock, TrendingUp, Camera } from 'lucide-react';
+import { Home, ClipboardList, CalendarDays, Clock, TrendingUp, Camera } from 'lucide-react';
 
 export default function Layout() {
   return (
@@ -14,6 +14,10 @@ export default function Layout() {
           <NavLink to="/workouts" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <ClipboardList />
             <span>Workouts</span>
+          </NavLink>
+          <NavLink to="/plan" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <CalendarDays />
+            <span>Plan</span>
           </NavLink>
           <NavLink to="/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <Clock />

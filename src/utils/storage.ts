@@ -138,6 +138,26 @@ export type WorkoutLog = {
 const WORKOUTS_KEY = 'gymtrack_workouts';
 const WORKOUT_LOGS_KEY = 'gymtrack_workout_logs';
 const EXERCISES_KEY = 'gymtrack_exercises';
+const SCHEDULE_KEY = 'gymtrack_schedule';
+
+// A planned training calendar: maps a local date key (YYYY-MM-DD) to the id of
+// the workout planned for that day. Empty when nothing is scheduled.
+export type WorkoutSchedule = { [dateKey: string]: string };
+
+// Local date key (YYYY-MM-DD) in the user's own timezone, so a planned day
+// lines up with the calendar they see (not UTC).
+export function localDateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function getSchedule(): WorkoutSchedule {
+  const data = localStorage.getItem(SCHEDULE_KEY);
+  return data ? JSON.parse(data) : {};
+}
+
+export function saveSchedule(schedule: WorkoutSchedule): void {
+  localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule));
+}
 
 const defaultExercises: Exercise[] = [
   // Original exercises

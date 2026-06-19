@@ -1,12 +1,23 @@
 import { useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Play, Dumbbell, Calendar, Download, Upload, Settings } from 'lucide-react';
-import { getWorkouts, getWorkoutLogs, getExercises } from '../utils/storage';
+import { Link, useNavigate } from 'react-router-dom';
+import { Play, Dumbbell, Calendar, CalendarClock, Download, Upload, Settings } from 'lucide-react';
+import { getWorkouts, getWorkoutLogs, getExercises, getSchedule, localDateKey } from '../utils/storage';
 
 export default function Home() {
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const workouts = getWorkouts();
   const logs = getWorkoutLogs();
+
+  // Next planned session: the soonest scheduled day from today onwards whose
+  // workout still exists.
+  const todayKey = localDateKey(new Date());
+  const schedule = getSchedule();
+  const nextEntry = Object.entries(schedule)
+    .filter(([k]) => k >= todayKey)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, id]) => ({ k, workout: workouts.find(w => w.id === id) }))
+    .find(e => e.workout);
 
   // Count workouts this week
   const now = new Date();
@@ -87,6 +98,25 @@ export default function Home() {
           <div className="stat-label">Saved templates</div>
         </div>
       </div>
+
+      {nextEntry && nextEntry.workout && (
+        <div className="card" style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: 'var(--primary)' }}>
+            <CalendarClock size={16} />
+            <span style={{ fontSize: 13, fontWeight: 600 }}>
+              {nextEntry.k === todayKey
+                ? 'Today'
+                : new Date(`${nextEntry.k}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ fontWeight: 600 }}>{nextEntry.workout.name}</span>
+            <button className="btn btn-primary btn-sm" onClick={() => navigate(`/workout/${nextEntry.workout!.id}`)}>
+              <Play size={16} /> Start
+            </button>
+          </div>
+        </div>
+      )}
 
       <Link to="/workouts" className="btn btn-primary btn-block" style={{ marginBottom: 12 }}>
         <Play size={20} />
