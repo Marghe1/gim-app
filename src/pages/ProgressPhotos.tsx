@@ -90,7 +90,7 @@ export default function ProgressPhotos() {
     <div className="home">
       <PageHero
         eyebrow="See how you change over time"
-        title="Progress Photos"
+        title="Glow Up"
         stats={[
           { value: photos.length, label: photos.length === 1 ? 'photo' : 'photos' },
           {

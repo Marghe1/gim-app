@@ -29,7 +29,7 @@ export default function Layout() {
           </NavLink>
           <NavLink to="/photos" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <Camera />
-            <span>Photos</span>
+            <span>Glow Up</span>
           </NavLink>
         </div>
       </nav>
