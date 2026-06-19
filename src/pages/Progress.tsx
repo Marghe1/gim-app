@@ -224,10 +224,10 @@ export default function Progress() {
               {selectedData && selectedData.data.length > 1 ? (
                 <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' }}>
                   <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={selectedData.data}>
+                    <LineChart data={selectedData.data} margin={{ top: 10, right: 12, left: 4, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} unit={selectedData.metric === 'reps' ? '' : selectedData.unit} />
+                      <YAxis domain={['auto', 'auto']} width={46} tick={{ fontSize: 12 }} unit={selectedData.metric === 'reps' ? '' : selectedData.unit} />
                       <Tooltip formatter={(value) => chartTooltip(Number(value))} contentStyle={{ borderRadius: 8 }} />
                       <Line
                         type="monotone"

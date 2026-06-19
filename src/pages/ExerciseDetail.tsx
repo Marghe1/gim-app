@@ -152,10 +152,10 @@ export default function ExerciseDetail() {
           </div>
           <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' }}>
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
+              <LineChart data={chartData} margin={{ top: 10, right: 12, left: 4, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} unit="kg" />
+                <YAxis domain={['auto', 'auto']} width={46} tick={{ fontSize: 12 }} unit="kg" />
                 <Tooltip
                   formatter={(value, name) => [
                     name === 'weight' ? `${value} kg` : formatCount(Number(value), false, lang),

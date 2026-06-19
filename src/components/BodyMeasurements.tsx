@@ -132,11 +132,11 @@ export default function BodyMeasurements({
               <Hint text={t('needTwo')} />
             ) : (
               <ResponsiveContainer width="100%" height={220}>
-                <ComposedChart data={weightBmiData} margin={{ top: 10, right: 4, left: -16, bottom: 0 }}>
+                <ComposedChart data={weightBmiData} margin={{ top: 10, right: 10, left: 4, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis yAxisId="left" tick={{ fontSize: 11 }} width={34} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} width={28} />
+                  <YAxis yAxisId="left" domain={['auto', 'auto']} tick={{ fontSize: 11 }} width={44} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} width={38} />
                   <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar yAxisId="right" dataKey="bmi" name={t('legendBmi')} fill={LAVENDER} radius={[5, 5, 0, 0]} maxBarSize={34} />
@@ -152,10 +152,10 @@ export default function BodyMeasurements({
               <Hint text={t('needTwo')} />
             ) : (
               <ResponsiveContainer width="100%" height={230}>
-                <BarChart data={circumData} margin={{ top: 10, right: 4, left: -16, bottom: 0 }}>
+                <BarChart data={circumData} margin={{ top: 10, right: 10, left: 4, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} width={34} />
+                  <YAxis tick={{ fontSize: 11 }} width={44} />
                   <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="waist" stackId="c" name={t('legendWaist')} fill={MINT} />

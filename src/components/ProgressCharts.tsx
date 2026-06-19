@@ -39,6 +39,9 @@ const LAVENDER = '#b9a7f0';
 const SKY = '#6cc8ff';
 const GRID = '#e2eae7';
 
+// Abbreviate large axis numbers (e.g. 3200 -> "3.2k") so they fit and stay readable.
+const abbreviateK = (v: number) => (v >= 1000 ? `${Math.round(v / 100) / 10}k` : `${v}`);
+
 // Keep time-series charts readable — show the most recent N sessions.
 const MAX_POINTS = 12;
 
@@ -92,7 +95,7 @@ export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
       <ResponsiveContainer width="100%" height={220}>
         <ComposedChart
           data={data}
-          margin={{ top: 18, right: 6, left: -18, bottom: 0 }}
+          margin={{ top: 18, right: 12, left: 4, bottom: 0 }}
           onClick={(state: any) => {
             const p = state?.activePayload?.[0]?.payload as SessionStat | undefined;
             if (p) setSelectedId(p.id);
@@ -100,7 +103,7 @@ export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
         >
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
           <XAxis dataKey="dateLabel" tick={{ fontSize: 11 }} />
-          <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} width={34} />
+          <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} width={38} />
           <Tooltip
             contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
             formatter={(value: any, name: any) => [value, name === 'score' ? t('legendScore') : t('legendTrend')]}
@@ -285,10 +288,10 @@ function TimeSeriesBars({
   const { data } = recent(stats);
   return (
     <ResponsiveContainer width="100%" height={190}>
-      <BarChart data={data} margin={{ top: 18, right: 6, left: -14, bottom: 0 }}>
+      <BarChart data={data} margin={{ top: 18, right: 12, left: 4, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
         <XAxis dataKey="dateLabel" tick={{ fontSize: 11 }} />
-        <YAxis tick={{ fontSize: 11 }} width={38} />
+        <YAxis tick={{ fontSize: 11 }} width={44} tickFormatter={abbreviateK} />
         <Tooltip
           contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
           formatter={(value: any) => [`${Number(value).toLocaleString(locale)} ${unit}`, label]}
@@ -393,10 +396,10 @@ export function DurationChart({ stats }: { stats: SessionStat[] }) {
   return (
     <ChartCard title={t('durationTitle')} subtitle={t('durationSubtitle')}>
       <ResponsiveContainer width="100%" height={190}>
-        <BarChart data={data} margin={{ top: 18, right: 6, left: -14, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 18, right: 12, left: 4, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
           <XAxis dataKey="dateLabel" tick={{ fontSize: 11 }} />
-          <YAxis tick={{ fontSize: 11 }} width={38} unit="m" />
+          <YAxis tick={{ fontSize: 11 }} width={44} unit="m" />
           <Tooltip
             contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
             formatter={(_value: any, _n: any, item: any) => [formatDuration(item?.payload?.durationSec ?? 0), t('legendDuration')]}
