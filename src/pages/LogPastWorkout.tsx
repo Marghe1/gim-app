@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { X, Minus, Plus, Trash2, Check } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutLog, ExerciseLog } from '../utils/storage';
@@ -50,8 +50,12 @@ function buildExerciseLogs(workout: Workout): ExerciseLog[] {
 export default function LogPastWorkout() {
   const navigate = useNavigate();
   const { logId } = useParams();
+  const location = useLocation();
   const t = useT(logPastWorkoutStrings);
   const { lang } = useLang();
+
+  // When adding from the calendar, a day can be passed in to prefill the date.
+  const presetDate = (location.state as { date?: string } | null)?.date;
 
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [timedIds] = useState<Set<string>>(() => getTimedExerciseIds());
@@ -61,7 +65,7 @@ export default function LogPastWorkout() {
   const [editLog, setEditLog] = useState<WorkoutLog | null>(null);
 
   const [selectedWorkoutId, setSelectedWorkoutId] = useState('');
-  const [date, setDate] = useState(() => localDateKey(new Date()));
+  const [date, setDate] = useState(() => presetDate || localDateKey(new Date()));
   const [durationMin, setDurationMin] = useState('');
   const [note, setNote] = useState('');
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);

@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, Trophy, Flame, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Download, FileSpreadsheet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { TrendingUp, Trophy, Flame, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Download, FileSpreadsheet, X, Plus, Pencil } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { WorkoutLog } from '../utils/storage';
-import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/storage';
+import { getWorkoutLogs, getTimedExerciseIds, formatCount, formatDuration } from '../utils/storage';
 import PageHero from '../components/PageHero';
 import { computeSessionStats, effortDistribution, downloadProgressCsv, downloadProgressXlsx } from '../utils/progressStats';
 import { OverallProgressChart, EffortPie, VolumeChart, DurationChart, EmojiJournal } from '../components/ProgressCharts';
@@ -333,19 +334,26 @@ const WEEKDAY_KEYS = [
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
 function WorkoutCalendar({ logs, t, lang }: { logs: WorkoutLog[]; t: TFn; lang: Lang }) {
-  // How many workouts happened on each day.
-  const countByDay = useMemo(() => {
-    const map: Record<string, number> = {};
+  const navigate = useNavigate();
+
+  // The workouts logged on each day (newest first within a day).
+  const logsByDay = useMemo(() => {
+    const map: Record<string, WorkoutLog[]> = {};
     logs.forEach((l) => {
       const k = dayKey(new Date(l.date));
-      map[k] = (map[k] ?? 0) + 1;
+      (map[k] ??= []).push(l);
     });
+    Object.values(map).forEach((arr) =>
+      arr.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    );
     return map;
   }, [logs]);
 
   const today = new Date();
   const todayKey = dayKey(today);
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() });
+  // Which day's popup is open (date key), or null.
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString(localeFor(lang), {
     month: 'long',
@@ -366,11 +374,11 @@ function WorkoutCalendar({ logs, t, lang }: { logs: WorkoutLog[]; t: TFn; lang: 
 
   const monthWorkouts = useMemo(
     () =>
-      Object.entries(countByDay).reduce((sum, [k, n]) => {
+      Object.entries(logsByDay).reduce((sum, [k, arr]) => {
         const [y, m] = k.split('-').map(Number);
-        return y === view.year && m === view.month + 1 ? sum + n : sum;
+        return y === view.year && m === view.month + 1 ? sum + arr.length : sum;
       }, 0),
-    [countByDay, view]
+    [logsByDay, view]
   );
 
   function step(delta: number) {
@@ -382,10 +390,11 @@ function WorkoutCalendar({ logs, t, lang }: { logs: WorkoutLog[]; t: TFn; lang: 
 
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <CalendarDays size={18} />
         <h3 style={{ fontSize: 16, fontWeight: 600 }}>{t('workoutCalendar')}</h3>
       </div>
+      <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px' }}>{t('calendarHint')}</p>
 
       <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' }}>
         {/* Month navigation */}
@@ -422,12 +431,15 @@ function WorkoutCalendar({ logs, t, lang }: { logs: WorkoutLog[]; t: TFn; lang: 
           {cells.map((d, i) => {
             if (!d) return <div key={`b${i}`} />;
             const k = dayKey(d);
-            const did = countByDay[k] > 0;
+            const count = logsByDay[k]?.length ?? 0;
+            const did = count > 0;
             const isToday = k === todayKey;
             return (
-              <div
+              <button
                 key={k}
-                title={did ? (countByDay[k] === 1 ? t('workoutCount', { n: countByDay[k] }) : t('workoutCountPlural', { n: countByDay[k] })) : undefined}
+                type="button"
+                onClick={() => setSelectedDay(k)}
+                title={did ? (count === 1 ? t('workoutCount', { n: count }) : t('workoutCountPlural', { n: count })) : undefined}
                 style={{
                   aspectRatio: '1 / 1',
                   display: 'flex',
@@ -436,17 +448,80 @@ function WorkoutCalendar({ logs, t, lang }: { logs: WorkoutLog[]; t: TFn; lang: 
                   fontSize: 13,
                   fontWeight: did ? 700 : 400,
                   borderRadius: '50%',
+                  cursor: 'pointer',
+                  padding: 0,
                   color: did ? 'white' : '#374151',
                   background: did ? '#16C79A' : 'transparent',
                   border: isToday && !did ? '1.5px solid #16C79A' : '1.5px solid transparent',
                 }}
               >
                 {d.getDate()}
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
+
+      {/* Day detail popup: view / edit logged workouts or add one for this day */}
+      {selectedDay && (
+        <div className="modal-overlay" onClick={() => setSelectedDay(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2 className="modal-title" style={{ textTransform: 'capitalize' }}>
+                {new Date(selectedDay + 'T00:00:00').toLocaleDateString(localeFor(lang), {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </h2>
+              <button className="btn btn-ghost" onClick={() => setSelectedDay(null)} aria-label={t('close')} style={{ padding: 6 }}>
+                <X size={22} />
+              </button>
+            </div>
+
+            {(logsByDay[selectedDay]?.length ?? 0) === 0 ? (
+              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>{t('noWorkoutThisDay')}</p>
+            ) : (
+              <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+                {logsByDay[selectedDay].map((log) => (
+                  <button
+                    key={log.id}
+                    type="button"
+                    onClick={() => navigate(`/log-past/${log.id}`)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                      width: '100%',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      background: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 12,
+                      padding: 12,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{log.workoutName}</div>
+                      <div style={{ fontSize: 13, color: '#6b7280' }}>{formatDuration(log.duration)}</div>
+                    </div>
+                    <Pencil size={18} style={{ color: '#6b7280', flexShrink: 0 }} />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <button
+              className="btn btn-primary btn-block"
+              onClick={() => navigate('/log-past', { state: { date: selectedDay } })}
+            >
+              <Plus size={18} /> {t('addWorkoutOnDay')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
