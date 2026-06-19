@@ -29,6 +29,7 @@ interface PageHeroProps {
 export default function PageHero({ title, eyebrow, stats, action, children }: PageHeroProps) {
   const [collapsed, setCollapsed] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!('IntersectionObserver' in window) || !sentinelRef.current) return;
@@ -40,6 +41,33 @@ export default function PageHero({ title, eyebrow, stats, action, children }: Pa
     return () => obs.disconnect();
   }, []);
 
+  // Gentle parallax + fade on the big hero as you scroll, so the page feels
+  // layered and fluid. GPU-composited (transform/opacity only), throttled with
+  // requestAnimationFrame, and skipped entirely when reduced motion is on.
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const y = window.scrollY || 0;
+      const fade = Math.max(0, 1 - y / 200);
+      el.style.opacity = String(0.2 + 0.8 * fade);
+      el.style.transform = `translate3d(0, ${(y * 0.35).toFixed(1)}px, 0)`;
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
     <>
       <div className={`page-topbar${collapsed ? ' is-visible' : ''}`}>
@@ -47,7 +75,7 @@ export default function PageHero({ title, eyebrow, stats, action, children }: Pa
         {action}
       </div>
 
-      <header className="home-hero">
+      <header className="home-hero" ref={heroRef}>
         <div className="home-hero-top">
           <div>
             {eyebrow && <p className="home-eyebrow">{eyebrow}</p>}

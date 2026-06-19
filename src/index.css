@@ -50,6 +50,7 @@ html, body {
   color: var(--gray-900);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
 }
 
 h1, h2, h3, .stat-value {
@@ -556,9 +557,12 @@ h1, h2, h3, .stat-value {
 .home-hero {
   background: var(--hero-gradient);
   color: white;
-  padding: 28px 22px 56px;
+  padding: 28px 22px 60px;
   padding-top: max(28px, env(safe-area-inset-top));
   border-radius: 0 0 32px 32px;
+  /* The hero is parallax-faded on scroll (see PageHero) — hint the compositor. */
+  will-change: transform, opacity;
+  transform-origin: top center;
 }
 
 .home-hero-top {
@@ -627,9 +631,12 @@ h1, h2, h3, .stat-value {
 .home-sheet {
   flex: 1;
   background: var(--mint-wash);
-  border-radius: 28px 28px 0 0;
-  margin-top: -28px;
-  padding: 22px 16px 0;
+  border-radius: 32px 32px 0 0;
+  margin-top: -32px;
+  padding: 24px 16px 0;
+  /* Soft upward shadow so the sheet reads as lifting over the hero — adds depth
+     and makes the hero→content transition feel fluid while scrolling. */
+  box-shadow: 0 -14px 30px -14px rgba(12, 156, 120, 0.28);
   /* `position: relative` (without a z-index) keeps the sheet painted over the
      hero — it's a later, positioned sibling — without creating a stacking
      context. A z-index here would trap popups rendered inside the sheet BELOW
@@ -772,6 +779,9 @@ h1, h2, h3, .stat-value {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html, body {
+    scroll-behavior: auto;
+  }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
