@@ -156,7 +156,7 @@ export default function Exercises() {
       {/* Quick Setup Panel */}
       {showQuickSetup ? (
         <div style={{
-          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #16C79A 0%, #0E9E7B 100%)',
           borderRadius: 16,
           padding: 20,
           marginBottom: 20,
@@ -233,7 +233,7 @@ export default function Exercises() {
             onClick={applyQuickSetup}
             style={{
               background: 'white',
-              color: '#6366f1',
+              color: '#16C79A',
               fontWeight: 600,
               padding: 14,
             }}

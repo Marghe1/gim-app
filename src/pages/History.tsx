@@ -174,7 +174,7 @@ export default function History() {
                           <button
                             className="btn btn-ghost btn-sm"
                             onClick={() => startEdit(log.id, null, '')}
-                            style={{ color: '#6366f1', display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}
+                            style={{ color: '#16C79A', display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}
                           >
                             <Plus size={14} /> Add a note
                           </button>
@@ -220,7 +220,7 @@ export default function History() {
                                 gap: 6,
                               }}
                             >
-                              <MessageSquare size={14} style={{ color: '#6366f1', flexShrink: 0, marginTop: 2 }} />
+                              <MessageSquare size={14} style={{ color: '#16C79A', flexShrink: 0, marginTop: 2 }} />
                               <span>{exercise.note}</span>
                             </div>
                           ) : (

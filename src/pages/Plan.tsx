@@ -178,8 +178,8 @@ export default function Plan() {
                 style={{
                   aspectRatio: '1 / 1',
                   borderRadius: 8,
-                  border: isToday ? '1.5px solid #6366f1' : '1.5px solid transparent',
-                  background: planned ? '#6366f1' : '#f3f4f6',
+                  border: isToday ? '1.5px solid #16C79A' : '1.5px solid transparent',
+                  background: planned ? '#16C79A' : '#f3f4f6',
                   color: planned ? 'white' : '#374151',
                   display: 'flex',
                   flexDirection: 'column',
@@ -272,7 +272,7 @@ export default function Plan() {
                         textAlign: 'left',
                         width: '100%',
                         background: selected ? 'var(--color-surface, #eef2ff)' : undefined,
-                        border: selected ? '1.5px solid #6366f1' : undefined,
+                        border: selected ? '1.5px solid #16C79A' : undefined,
                       }}
                     >
                       <div className="list-item-content">

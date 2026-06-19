@@ -732,7 +732,7 @@ export default function ActiveWorkout() {
                 height: 16,
                 padding: group.items.length > 1 ? '0 4px' : 0,
                 borderRadius: 8,
-                border: index === currentGroupIndex ? '2px solid #6366f1' : 'none',
+                border: index === currentGroupIndex ? '2px solid #16C79A' : 'none',
                 cursor: 'pointer',
                 background: allSkipped ? '#9ca3af' : complete ? '#22c55e' : partial ? '#f59e0b' : '#e5e7eb',
                 transition: 'all 0.2s',
@@ -761,7 +761,7 @@ export default function ActiveWorkout() {
       >
         {/* Group header */}
         <div style={{
-          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #16C79A 0%, #0E9E7B 100%)',
           borderRadius: 16,
           padding: 20,
           marginBottom: 16,
@@ -907,7 +907,7 @@ export default function ActiveWorkout() {
                         <button
                           className="btn btn-sm"
                           onClick={() => unskipExercise(item.index)}
-                          style={{ background: 'white', color: '#6366f1' }}
+                          style={{ background: 'white', color: '#16C79A' }}
                         >
                           Restore Exercise
                         </button>
@@ -965,7 +965,7 @@ export default function ActiveWorkout() {
 
         {/* Rest Timer */}
         <div style={{
-          background: timerRunning ? '#6366f1' : '#f3f4f6',
+          background: timerRunning ? '#16C79A' : '#f3f4f6',
           borderRadius: 16,
           padding: 16,
           marginBottom: 20,

@@ -205,9 +205,9 @@ export default function Progress() {
                       <Line
                         type="monotone"
                         dataKey="value"
-                        stroke="#6366f1"
+                        stroke="#16C79A"
                         strokeWidth={2}
-                        dot={{ fill: '#6366f1', r: 4 }}
+                        dot={{ fill: '#16C79A', r: 4 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -376,8 +376,8 @@ function WorkoutCalendar({ logs }: { logs: WorkoutLog[] }) {
                   fontWeight: did ? 700 : 400,
                   borderRadius: '50%',
                   color: did ? 'white' : '#374151',
-                  background: did ? '#6366f1' : 'transparent',
-                  border: isToday && !did ? '1.5px solid #6366f1' : '1.5px solid transparent',
+                  background: did ? '#16C79A' : 'transparent',
+                  border: isToday && !did ? '1.5px solid #16C79A' : '1.5px solid transparent',
                 }}
               >
                 {d.getDate()}

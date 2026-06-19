@@ -345,7 +345,7 @@ export default function Workouts() {
                                 borderBottom: idx < template.exercises.length - 1 ? '1px solid var(--color-border)' : 'none',
                               }}
                             >
-                              <span style={{ fontWeight: 700, color: 'var(--color-primary, #6366f1)', minWidth: 24 }}>
+                              <span style={{ fontWeight: 700, color: 'var(--color-primary, #16C79A)', minWidth: 24 }}>
                                 {subLabels[idx]}
                               </span>
                               <span style={{ flex: 1 }}>
@@ -438,7 +438,7 @@ export default function Workouts() {
                       <span style={{
                         fontWeight: 700,
                         fontSize: 13,
-                        color: 'var(--color-primary, #6366f1)',
+                        color: 'var(--color-primary, #16C79A)',
                         minWidth: 26,
                         textAlign: 'center',
                       }}>
@@ -457,7 +457,7 @@ export default function Workouts() {
                           className="btn btn-ghost"
                           title={linked ? 'Split from circuit above' : 'Link into a circuit with the exercise above'}
                           onClick={() => linked ? unlinkFromAbove(index) : linkWithAbove(index)}
-                          style={{ color: linked ? 'var(--color-primary, #6366f1)' : undefined }}
+                          style={{ color: linked ? 'var(--color-primary, #16C79A)' : undefined }}
                         >
                           {linked ? <Link2Off size={18} /> : <Link2 size={18} />}
                         </button>

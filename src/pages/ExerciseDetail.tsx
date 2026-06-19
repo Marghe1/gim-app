@@ -161,9 +161,9 @@ export default function ExerciseDetail() {
                 <Line
                   type="monotone"
                   dataKey="weight"
-                  stroke="#6366f1"
+                  stroke="#16C79A"
                   strokeWidth={2}
-                  dot={{ fill: '#6366f1', r: 4 }}
+                  dot={{ fill: '#16C79A', r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
