@@ -79,8 +79,7 @@ export default function About() {
           marginBottom: 24,
         }}
       >
-        My very first app, made by me, Margherita, in Brussels. Built with curiosity, a lot of
-        patience and even more love.
+        My very first app. Built with curiosity, a lot of patience and even more love.
       </p>
 
       <div
