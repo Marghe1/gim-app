@@ -102,11 +102,11 @@ export default function Home() {
       <header className="home-hero">
         <div className="home-hero-top">
           <div>
-            <p className="home-eyebrow">{greeting} 🌿</p>
+            <p className="home-eyebrow">{greeting} ✊</p>
             <h1 className="home-title">Hi, Margherita</h1>
           </div>
           <Link to="/about" className="home-avatar" aria-label="About this app">
-            🌱
+            🏋️‍♀️
           </Link>
         </div>
 
