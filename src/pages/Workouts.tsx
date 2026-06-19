@@ -215,7 +215,13 @@ export default function Workouts() {
 
         {workouts.length === 0 ? (
           <div className="empty-state">
-            <p>No workout templates yet. Create your first one!</p>
+            <p style={{ marginBottom: 16 }}>No workouts yet. Add the ready-made PT sessions, or create your own.</p>
+            {templates.length > 0 && (
+              <button className="btn btn-primary btn-block" onClick={importAllTemplates}>
+                <Copy size={18} />
+                Add all {templates.length} PT session templates
+              </button>
+            )}
           </div>
         ) : (
           <div className="list">

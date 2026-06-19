@@ -17,9 +17,13 @@ export function getExerciseVideoUrl(ex: { name: string; videoUrl?: string }): st
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' how to')}`;
 }
 
-// Format a rep count or hold duration with its unit.
-export function formatCount(value: number, isTimed?: boolean): string {
-  if (!isTimed) return `${value} reps`;
+// Format a rep count or hold duration with its unit. `lang` switches the rep
+// word ("reps" / "rip." / "rép."); time units (s/m/h) are kept across languages.
+export function formatCount(value: number, isTimed?: boolean, lang: string = 'en'): string {
+  if (!isTimed) {
+    const reps = lang === 'it' ? 'rip.' : lang === 'fr' ? 'rép.' : 'reps';
+    return `${value} ${reps}`;
+  }
   if (value < 60) return `${value}s`;
   const m = Math.floor(value / 60);
   const s = value % 60;
