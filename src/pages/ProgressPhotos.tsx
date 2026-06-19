@@ -428,7 +428,7 @@ function ViewPhotoModal({
             alt={poseLabel(t, photo.pose)}
             style={{
               width: '100%',
-              maxHeight: '60vh',
+              maxHeight: '50dvh',
               objectFit: 'contain',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--gray-100)',
