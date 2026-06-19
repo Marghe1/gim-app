@@ -5,7 +5,7 @@ import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/storage';
 import PageHero from '../components/PageHero';
 import { computeSessionStats, effortDistribution, downloadProgressCsv, downloadProgressXlsx } from '../utils/progressStats';
-import { OverallProgressChart, EffortPie, VolumeChart, DurationChart } from '../components/ProgressCharts';
+import { OverallProgressChart, EffortPie, VolumeChart, DurationChart, EmojiJournal } from '../components/ProgressCharts';
 import { useT, useLang } from '../i18n/context';
 import type { Lang } from '../i18n/context';
 import { progressStrings } from '../i18n/strings/progress';
@@ -198,6 +198,9 @@ export default function Progress() {
 
           {/* Effort breakdown */}
           <EffortPie slices={effortSlices} />
+
+          {/* Mood / emoji diary per workout */}
+          <EmojiJournal logs={logs} />
 
           {/* Total weight lifted per workout */}
           <VolumeChart stats={sessionStats} />

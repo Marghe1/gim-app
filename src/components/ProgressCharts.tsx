@@ -17,6 +17,7 @@ import {
 import { Info, X } from 'lucide-react';
 import type { SessionStat, EffortSlice } from '../utils/progressStats';
 import { EFFORT_META } from '../utils/progressStats';
+import type { WorkoutLog } from '../utils/storage';
 import { formatDuration } from '../utils/storage';
 import { useT, useLang } from '../i18n/context';
 import { progressChartsStrings } from '../i18n/strings/progressCharts';
@@ -308,6 +309,75 @@ export function VolumeChart({ stats }: { stats: SessionStat[] }) {
   return (
     <ChartCard title={t('volumeTitle')} subtitle={t('volumeSubtitle')}>
       <TimeSeriesBars stats={stats} dataKey="volume" color={MINT} unit="kg" label={t('legendWeight')} locale={localeFor(lang)} />
+    </ChartCard>
+  );
+}
+
+/** A visual diary: each recent workout's overall mood emoji plus the per-exercise
+ *  effort emojis (😴😊😐😓🔥), newest first. */
+export function EmojiJournal({ logs }: { logs: WorkoutLog[] }) {
+  const t = useT(progressChartsStrings);
+  const { lang } = useLang();
+
+  const emojiForEffort = (rating?: number) =>
+    rating === undefined ? null : EFFORT_META[Math.min(4, Math.max(0, Math.round(rating) - 1))].emoji;
+
+  // Newest first; keep only sessions that carry some emoji signal.
+  const entries = logs
+    .filter(l => l.completed)
+    .slice()
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .map(l => ({
+      log: l,
+      effortEmojis: l.exercises.map(e => emojiForEffort(e.effortRating)).filter(Boolean) as string[],
+    }))
+    .filter(e => e.log.emoji || e.effortEmojis.length > 0)
+    .slice(0, 10);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <ChartCard title={t('emojiJournalTitle')} subtitle={t('emojiJournalSubtitle')}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {entries.map(({ log, effortEmojis }) => (
+          <div
+            key={log.id}
+            style={{
+              padding: '10px 12px',
+              borderRadius: 12,
+              background: 'var(--gray-50)',
+              border: '1px solid var(--gray-100)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gray-600)' }}>
+                  {new Date(log.date).toLocaleDateString(localeFor(lang), { day: 'numeric', month: 'short' })}
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--gray-500)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {log.workoutName}
+                </div>
+              </div>
+              {log.emoji && <span style={{ fontSize: 30, lineHeight: 1 }}>{log.emoji}</span>}
+            </div>
+            {effortEmojis.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8, fontSize: 18 }}>
+                {effortEmojis.map((e, i) => (
+                  <span key={i}>{e}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </ChartCard>
   );
 }

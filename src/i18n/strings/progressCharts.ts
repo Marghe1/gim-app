@@ -37,6 +37,11 @@ export const progressChartsStrings: Strings = {
     durationSubtitle: 'How long each workout took, by day.',
     legendDuration: 'Duration',
 
+    // Emoji / mood journal
+    emojiJournalTitle: 'Mood journal',
+    emojiJournalSubtitle:
+      'How each workout felt. The big emoji is your overall mood; the small ones show how hard each exercise felt (😴 very easy → 🔥 maximum).',
+
     // Reps chart
     repsTitle: 'Repetitions each workout',
     repsSubtitle: 'Total reps across all exercises.',
@@ -86,6 +91,11 @@ export const progressChartsStrings: Strings = {
     durationSubtitle: 'Quanto è durato ogni allenamento, per giorno.',
     legendDuration: 'Durata',
 
+    // Emoji / mood journal
+    emojiJournalTitle: 'Diario dell\'umore',
+    emojiJournalSubtitle:
+      'Come ti sei sentita a ogni allenamento. L\'emoji grande è l\'umore generale; le piccole indicano quanto è stato intenso ogni esercizio (😴 molto facile → 🔥 massimo).',
+
     // Reps chart
     repsTitle: 'Ripetizioni per allenamento',
     repsSubtitle: 'Ripetizioni totali su tutti gli esercizi.',
@@ -134,6 +144,11 @@ export const progressChartsStrings: Strings = {
     durationTitle: 'Durée de la séance',
     durationSubtitle: 'Combien de temps a duré chaque séance, par jour.',
     legendDuration: 'Durée',
+
+    // Emoji / mood journal
+    emojiJournalTitle: 'Journal d\'humeur',
+    emojiJournalSubtitle:
+      'Le ressenti de chaque séance. Le grand emoji est votre humeur générale ; les petits montrent l\'intensité de chaque exercice (😴 très facile → 🔥 maximum).',
 
     // Reps chart
     repsTitle: 'Répétitions par séance',

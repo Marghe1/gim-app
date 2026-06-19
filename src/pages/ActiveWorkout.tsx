@@ -30,6 +30,9 @@ const EFFORT_OPTIONS = [
   { value: 5, emoji: '🔥', label: 'Maximum' },
 ];
 
+// Quick-pick mood emojis for the whole session (must match History's presets).
+const MOOD_EMOJIS = ['💪', '🔥', '😊', '😎', '🥳', '😅', '😓', '🥵', '😴', '🤕', '🎉', '❤️'];
+
 export default function ActiveWorkout() {
   const { workoutId } = useParams();
   const navigate = useNavigate();
@@ -69,8 +72,9 @@ export default function ActiveWorkout() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [suggestions, setSuggestions] = useState<ProgressionSuggestion[]>([]);
 
-  // Overall workout note (saved at the end of the session)
+  // Overall workout note + mood emoji (saved at the end of the session)
   const [workoutNote, setWorkoutNote] = useState('');
+  const [workoutEmoji, setWorkoutEmoji] = useState<string | undefined>(undefined);
   const [finishedLog, setFinishedLog] = useState<WorkoutLog | null>(null);
 
   // Note modal (per exercise)
@@ -494,6 +498,7 @@ export default function ActiveWorkout() {
       duration,
       exercises: completedLogs,
       notes: workoutNote.trim() || undefined,
+      emoji: workoutEmoji,
       completed: true,
     };
     saveWorkoutLog(log);
@@ -508,6 +513,17 @@ export default function ActiveWorkout() {
     setWorkoutNote(text);
     if (finishedLog) {
       const updated: WorkoutLog = { ...finishedLog, notes: text.trim() || undefined };
+      setFinishedLog(updated);
+      saveWorkoutLog(updated);
+    }
+  }
+
+  // Pick / unpick the overall mood emoji (tap a selected one to clear it).
+  function updateWorkoutEmoji(emoji: string) {
+    const next = workoutEmoji === emoji ? undefined : emoji;
+    setWorkoutEmoji(next);
+    if (finishedLog) {
+      const updated: WorkoutLog = { ...finishedLog, emoji: next };
       setFinishedLog(updated);
       saveWorkoutLog(updated);
     }
@@ -1153,11 +1169,42 @@ export default function ActiveWorkout() {
               </div>
             )}
 
-            {/* Overall workout note */}
+            {/* Overall workout note + mood emoji */}
             <div style={{ marginBottom: 20, textAlign: 'left' }}>
               <h3 style={{ fontSize: 14, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
                 {t('noteForWorkoutTitle')}
               </h3>
+
+              {/* How did it go? — pick a mood emoji for the whole session */}
+              <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>{t('moodLabel')}</div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(6, 1fr)',
+                  gap: 6,
+                  marginBottom: 12,
+                }}
+              >
+                {MOOD_EMOJIS.map(e => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => updateWorkoutEmoji(e)}
+                    aria-pressed={workoutEmoji === e}
+                    style={{
+                      fontSize: 22,
+                      padding: 6,
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      background: workoutEmoji === e ? '#d1fae5' : 'white',
+                      border: `1.5px solid ${workoutEmoji === e ? '#16c79a' : '#e5e7eb'}`,
+                    }}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+
               <textarea
                 value={workoutNote}
                 onChange={e => updateWorkoutNote(e.target.value)}
