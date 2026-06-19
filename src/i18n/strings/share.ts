@@ -2,7 +2,7 @@ import type { Strings } from '../context';
 
 export const shareStrings: Strings = {
   en: {
-    cardTitle: 'Tell a friend',
+    cardTitle: 'Tell A Friend',
     cardSubtitle: 'GymApp is free. Share it with someone who might like it.',
     share: 'Share with a friend',
     shareTitle: 'GymApp',
@@ -11,7 +11,7 @@ export const shareStrings: Strings = {
     copyManually: 'Copy this link:',
   },
   it: {
-    cardTitle: 'Invita un amico',
+    cardTitle: 'Invita Un Amico',
     cardSubtitle: 'GymApp è gratuita. Condividila con qualcuno a cui potrebbe piacere.',
     share: 'Condividi con un amico',
     shareTitle: 'GymApp',
@@ -20,7 +20,7 @@ export const shareStrings: Strings = {
     copyManually: 'Copia questo link:',
   },
   fr: {
-    cardTitle: 'Parles-en à un ami',
+    cardTitle: 'Parles-en À Un Ami',
     cardSubtitle: 'GymApp est gratuite. Partage-la avec quelqu’un que ça pourrait intéresser.',
     share: 'Partager avec un ami',
     shareTitle: 'GymApp',

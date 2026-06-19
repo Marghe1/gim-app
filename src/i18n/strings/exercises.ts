@@ -52,7 +52,7 @@ export const exercisesStrings: Strings = {
     statExercisePlural: 'esercizi',
     statMuscleGroups: 'gruppi muscolari',
 
-    quickSetupTitle: 'Impostazione rapida del peso',
+    quickSetupTitle: 'Impostazione Rapida Del Peso',
     quickSetupIntro:
       'Trascina il cursore per impostare i pesi iniziali di tutti gli esercizi in base al tuo livello di forza.',
     levelBeginner: 'Principiante',
@@ -69,13 +69,13 @@ export const exercisesStrings: Strings = {
 
     searchPlaceholder: 'Cerca esercizi...',
     filterAll: 'Tutti',
-    addExercise: 'Aggiungi esercizio',
+    addExercise: 'Aggiungi Esercizio',
 
     noChange: '(nessuna modifica)',
 
     emptyState: 'Nessun esercizio trovato. Aggiungi il tuo primo esercizio!',
 
-    editExercise: 'Modifica esercizio',
+    editExercise: 'Modifica Esercizio',
     exerciseNameLabel: 'Nome esercizio',
     exerciseNamePlaceholder: 'es. Squat',
     muscleGroupLabel: 'Gruppo muscolare',
@@ -96,7 +96,7 @@ export const exercisesStrings: Strings = {
     statExercisePlural: 'exercices',
     statMuscleGroups: 'groupes musculaires',
 
-    quickSetupTitle: 'Réglage rapide du poids',
+    quickSetupTitle: 'Réglage Rapide Du Poids',
     quickSetupIntro:
       'Faites glisser le curseur pour définir les poids de départ de tous les exercices selon votre niveau de force.',
     levelBeginner: 'Débutant',
@@ -113,13 +113,13 @@ export const exercisesStrings: Strings = {
 
     searchPlaceholder: 'Rechercher des exercices...',
     filterAll: 'Tous',
-    addExercise: 'Ajouter un exercice',
+    addExercise: 'Ajouter Un Exercice',
 
     noChange: '(aucun changement)',
 
     emptyState: 'Aucun exercice trouvé. Ajoutez votre premier exercice !',
 
-    editExercise: 'Modifier l’exercice',
+    editExercise: 'Modifier L’exercice',
     exerciseNameLabel: 'Nom de l’exercice',
     exerciseNamePlaceholder: 'ex. Squat',
     muscleGroupLabel: 'Groupe musculaire',

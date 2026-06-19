@@ -2,10 +2,10 @@ import type { Strings } from '../context';
 
 export const installPromptStrings: Strings = {
   en: {
-    installTitle: 'Add GymApp to your home screen',
+    installTitle: 'Add GymApp To Your Home Screen',
     installButton: 'Install',
     dismiss: 'Dismiss',
-    iosTitle: 'Add to Home Screen',
+    iosTitle: 'Add To Home Screen',
     iosIntro: 'Install GymApp in two taps:',
     iosStep1: 'Tap the Share button in Safari',
     iosStep2: 'Choose “Add to Home Screen”',
@@ -13,10 +13,10 @@ export const installPromptStrings: Strings = {
     iosClose: 'Got it',
   },
   it: {
-    installTitle: 'Aggiungi GymApp alla schermata Home',
+    installTitle: 'Aggiungi GymApp Alla Schermata Home',
     installButton: 'Installa',
     dismiss: 'Chiudi',
-    iosTitle: 'Aggiungi alla Home',
+    iosTitle: 'Aggiungi Alla Home',
     iosIntro: 'Installa GymApp in due tocchi:',
     iosStep1: 'Tocca il pulsante Condividi in Safari',
     iosStep2: 'Scegli “Aggiungi alla schermata Home”',
@@ -24,10 +24,10 @@ export const installPromptStrings: Strings = {
     iosClose: 'Ho capito',
   },
   fr: {
-    installTitle: 'Ajoute GymApp à ton écran d’accueil',
+    installTitle: 'Ajoute GymApp À Ton Écran D’accueil',
     installButton: 'Installer',
     dismiss: 'Fermer',
-    iosTitle: 'Ajouter à l’écran d’accueil',
+    iosTitle: 'Ajouter À L’écran D’accueil',
     iosIntro: 'Installe GymApp en deux touches :',
     iosStep1: 'Touche le bouton Partager dans Safari',
     iosStep2: 'Choisis « Sur l’écran d’accueil »',

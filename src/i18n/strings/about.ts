@@ -6,7 +6,7 @@ export const aboutStrings: Strings = {
     madeWith: 'Made with',
     madeBy: 'by Margherita in Brussels',
     language: 'Language',
-    backupTitle: 'Backup & restore',
+    backupTitle: 'Backup & Restore',
     backupSubtitle:
       'Saves your workouts and photos into one file. Use it to move to a new phone or recover your data.',
     exportBackup: 'Export backup',
@@ -30,7 +30,7 @@ export const aboutStrings: Strings = {
     madeWith: 'Fatta con',
     madeBy: 'da Margherita a Bruxelles',
     language: 'Lingua',
-    backupTitle: 'Backup e ripristino',
+    backupTitle: 'Backup E Ripristino',
     backupSubtitle:
       'Salva i tuoi allenamenti e le foto in un unico file. Usalo per passare a un nuovo telefono o recuperare i dati.',
     exportBackup: 'Esporta backup',
@@ -54,7 +54,7 @@ export const aboutStrings: Strings = {
     madeWith: 'Faite avec',
     madeBy: 'par Margherita à Bruxelles',
     language: 'Langue',
-    backupTitle: 'Sauvegarde et restauration',
+    backupTitle: 'Sauvegarde Et Restauration',
     backupSubtitle:
       'Enregistre tes séances et tes photos dans un seul fichier. Utilise-le pour changer de téléphone ou récupérer tes données.',
     exportBackup: 'Exporter la sauvegarde',

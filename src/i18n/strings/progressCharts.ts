@@ -3,7 +3,7 @@ import type { Strings } from '../context';
 export const progressChartsStrings: Strings = {
   en: {
     // Overall progress chart
-    overallProgressTitle: 'Overall progress',
+    overallProgressTitle: 'Overall Progress',
     overallProgressSubtitle:
       'A 0–100 score per workout blending weight, reps and effort vs your best. Tap a bar for details.',
     legendScore: 'Score',
@@ -16,34 +16,34 @@ export const progressChartsStrings: Strings = {
     detailEffort: 'Effort',
     detailTime: 'Time',
     detailClose: 'Close',
-    detailWhatTitle: 'What this means',
+    detailWhatTitle: 'What This Means',
     detailExplanation:
       'Your overall score is {score} out of 100. It blends how much weight you lifted, the reps and holds you did, and how hard the workout felt — all compared with your best-ever workout. The closer to 100, the closer you were to your personal best.',
     detailBestNote: '🔥 This was your best workout so far!',
 
     // Effort pie
-    effortPieTitle: 'How hard your workouts felt',
+    effortPieTitle: 'How Hard Your Workouts Felt',
     effortPieSubtitle: 'Effort you logged after each exercise.',
     tooltipTimesOne: '{n} time',
     tooltipTimesMany: '{n} times',
 
     // Volume chart
-    volumeTitle: 'Total weight lifted',
+    volumeTitle: 'Total Weight Lifted',
     volumeSubtitle: 'Total kilograms you lifted in each workout (weight × reps, added up).',
     legendWeight: 'Weight',
 
     // Duration chart
-    durationTitle: 'Workout duration',
+    durationTitle: 'Workout Duration',
     durationSubtitle: 'How long each workout took, by day.',
     legendDuration: 'Duration',
 
     // Emoji / mood journal
-    emojiJournalTitle: 'Mood journal',
+    emojiJournalTitle: 'Mood Journal',
     emojiJournalSubtitle:
       'How each workout felt. The big emoji is your overall mood; the small ones show how hard each exercise felt (😴 very easy → 🔥 maximum).',
 
     // Reps chart
-    repsTitle: 'Repetitions each workout',
+    repsTitle: 'Repetitions Each Workout',
     repsSubtitle: 'Total reps across all exercises.',
     legendReps: 'Reps',
     unitReps: 'reps',
@@ -57,7 +57,7 @@ export const progressChartsStrings: Strings = {
   },
   it: {
     // Overall progress chart
-    overallProgressTitle: 'Progressi complessivi',
+    overallProgressTitle: 'Progressi Complessivi',
     overallProgressSubtitle:
       'Un punteggio da 0 a 100 per allenamento che combina peso, ripetizioni e sforzo rispetto al tuo migliore. Tocca una barra per i dettagli.',
     legendScore: 'Punteggio',
@@ -70,34 +70,34 @@ export const progressChartsStrings: Strings = {
     detailEffort: 'Sforzo',
     detailTime: 'Tempo',
     detailClose: 'Chiudi',
-    detailWhatTitle: 'Cosa significa',
+    detailWhatTitle: 'Cosa Significa',
     detailExplanation:
       'Il tuo punteggio complessivo è {score} su 100. Combina quanto peso hai sollevato, le ripetizioni e le tenute che hai fatto e quanto è stato intenso l\'allenamento, il tutto rispetto al tuo allenamento migliore di sempre. Più ti avvicini a 100, più ti sei avvicinata al tuo record personale.',
     detailBestNote: '🔥 Questo è stato il tuo allenamento migliore finora!',
 
     // Effort pie
-    effortPieTitle: 'Quanto sono stati intensi i tuoi allenamenti',
+    effortPieTitle: 'Quanto Sono Stati Intensi I Tuoi Allenamenti',
     effortPieSubtitle: 'Lo sforzo che hai registrato dopo ogni esercizio.',
     tooltipTimesOne: '{n} volta',
     tooltipTimesMany: '{n} volte',
 
     // Volume chart
-    volumeTitle: 'Peso totale sollevato',
+    volumeTitle: 'Peso Totale Sollevato',
     volumeSubtitle: 'Chilogrammi totali sollevati in ogni allenamento (peso × ripetizioni, sommati).',
     legendWeight: 'Peso',
 
     // Duration chart
-    durationTitle: 'Durata allenamento',
+    durationTitle: 'Durata Allenamento',
     durationSubtitle: 'Quanto è durato ogni allenamento, per giorno.',
     legendDuration: 'Durata',
 
     // Emoji / mood journal
-    emojiJournalTitle: 'Diario dell\'umore',
+    emojiJournalTitle: 'Diario Dell\'umore',
     emojiJournalSubtitle:
       'Come ti sei sentita a ogni allenamento. L\'emoji grande è l\'umore generale; le piccole indicano quanto è stato intenso ogni esercizio (😴 molto facile → 🔥 massimo).',
 
     // Reps chart
-    repsTitle: 'Ripetizioni per allenamento',
+    repsTitle: 'Ripetizioni Per Allenamento',
     repsSubtitle: 'Ripetizioni totali su tutti gli esercizi.',
     legendReps: 'Ripetizioni',
     unitReps: 'rip.',
@@ -111,7 +111,7 @@ export const progressChartsStrings: Strings = {
   },
   fr: {
     // Overall progress chart
-    overallProgressTitle: 'Progression globale',
+    overallProgressTitle: 'Progression Globale',
     overallProgressSubtitle:
       'Un score de 0 à 100 par séance combinant poids, répétitions et effort par rapport à votre meilleur. Touchez une barre pour les détails.',
     legendScore: 'Score',
@@ -124,34 +124,34 @@ export const progressChartsStrings: Strings = {
     detailEffort: 'Effort',
     detailTime: 'Temps',
     detailClose: 'Fermer',
-    detailWhatTitle: 'Ce que cela signifie',
+    detailWhatTitle: 'Ce Que Cela Signifie',
     detailExplanation:
       'Votre score global est de {score} sur 100. Il combine le poids soulevé, les répétitions et les maintiens réalisés, et l\'intensité ressentie — le tout comparé à votre meilleure séance. Plus c\'est proche de 100, plus vous étiez proche de votre record personnel.',
     detailBestNote: '🔥 C\'était votre meilleure séance jusqu\'ici !',
 
     // Effort pie
-    effortPieTitle: 'Intensité ressentie de vos séances',
+    effortPieTitle: 'Intensité Ressentie De Vos Séances',
     effortPieSubtitle: 'L\'effort que vous avez enregistré après chaque exercice.',
     tooltipTimesOne: '{n} fois',
     tooltipTimesMany: '{n} fois',
 
     // Volume chart
-    volumeTitle: 'Poids total soulevé',
+    volumeTitle: 'Poids Total Soulevé',
     volumeSubtitle: 'Kilogrammes totaux soulevés à chaque séance (poids × répétitions, additionnés).',
     legendWeight: 'Poids',
 
     // Duration chart
-    durationTitle: 'Durée de la séance',
+    durationTitle: 'Durée De La Séance',
     durationSubtitle: 'Combien de temps a duré chaque séance, par jour.',
     legendDuration: 'Durée',
 
     // Emoji / mood journal
-    emojiJournalTitle: 'Journal d\'humeur',
+    emojiJournalTitle: 'Journal D\'humeur',
     emojiJournalSubtitle:
       'Le ressenti de chaque séance. Le grand emoji est votre humeur générale ; les petits montrent l\'intensité de chaque exercice (😴 très facile → 🔥 maximum).',
 
     // Reps chart
-    repsTitle: 'Répétitions par séance',
+    repsTitle: 'Répétitions Par Séance',
     repsSubtitle: 'Répétitions totales sur tous les exercices.',
     legendReps: 'Répétitions',
     unitReps: 'rép.',

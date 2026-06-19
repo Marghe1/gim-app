@@ -13,7 +13,7 @@ export const planStrings: Strings = {
     confirmAutoPlan:
       'Plan a session every Tuesday and Thursday this month? Days already planned this month will be overwritten.',
     confirmClearMonth: 'Remove all planned sessions in this month?',
-    monthSessions: '{month} sessions',
+    monthSessions: '{month} Sessions',
     tooltipPlanned: 'Planned (workout removed)',
     tooltipTapToPlan: 'Tap to plan',
     emptyState: 'Nothing planned yet. Tap “Plan Tue & Thu” or pick a day on the calendar.',
@@ -38,7 +38,7 @@ export const planStrings: Strings = {
     confirmAutoPlan:
       'Pianificare una sessione ogni martedì e giovedì di questo mese? I giorni già pianificati questo mese verranno sovrascritti.',
     confirmClearMonth: 'Rimuovere tutte le sessioni pianificate di questo mese?',
-    monthSessions: 'Sessioni di {month}',
+    monthSessions: 'Sessioni Di {month}',
     tooltipPlanned: 'Pianificato (allenamento rimosso)',
     tooltipTapToPlan: 'Tocca per pianificare',
     emptyState:
@@ -64,7 +64,7 @@ export const planStrings: Strings = {
     confirmAutoPlan:
       'Planifier une séance chaque mardi et jeudi ce mois-ci ? Les jours déjà planifiés ce mois-ci seront écrasés.',
     confirmClearMonth: 'Retirer toutes les séances planifiées de ce mois ?',
-    monthSessions: 'Séances de {month}',
+    monthSessions: 'Séances De {month}',
     tooltipPlanned: 'Planifié (séance retirée)',
     tooltipTapToPlan: 'Toucher pour planifier',
     emptyState:
