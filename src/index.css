@@ -11,6 +11,7 @@
   --primary-light: #b4f0e0;
   --mint-soft: #cff5e9;
   --mint-wash: #eafbf4;
+  --hero-gradient: linear-gradient(155deg, #2fe0b6 0%, #14bd92 55%, #0c9c78 100%);
 
   /* Cute colourful accents */
   --coral: #ff8a80;
@@ -506,10 +507,49 @@ h1, h2, h3, .stat-value {
   padding-bottom: 90px;
 }
 
+/* Slim sticky bar that keeps the page title pinned once the big title scrolls away */
+.page-topbar {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  width: 100%;
+  max-width: 600px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 22px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  background: var(--hero-gradient);
+  color: white;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.28s ease, opacity 0.28s ease;
+}
+
+.page-topbar.is-visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.page-topbar-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .home-hero {
-  background: linear-gradient(155deg, #2fe0b6 0%, #14bd92 55%, #0c9c78 100%);
+  background: var(--hero-gradient);
   color: white;
   padding: 28px 22px 56px;
+  padding-top: max(28px, env(safe-area-inset-top));
   border-radius: 0 0 32px 32px;
 }
 
@@ -527,7 +567,7 @@ h1, h2, h3, .stat-value {
 }
 
 .home-title {
-  font-size: 30px;
+  font-size: clamp(26px, 7vw, 32px);
   font-weight: 600;
   line-height: 1.1;
   margin-top: 2px;
@@ -556,6 +596,7 @@ h1, h2, h3, .stat-value {
   background: rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-sm);
   padding: 14px 16px;
+  min-width: 0;
 }
 
 .hero-stat-value {

@@ -13,6 +13,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { getWorkouts, getWorkoutLogs, getExercises, getSchedule, localDateKey } from '../utils/storage';
+import PageHero from '../components/PageHero';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -99,28 +100,19 @@ export default function Home() {
   return (
     <div className="home">
       {/* Colourful hero */}
-      <header className="home-hero">
-        <div className="home-hero-top">
-          <div>
-            <p className="home-eyebrow">{greeting} ✊</p>
-            <h1 className="home-title">Hi, Margherita</h1>
-          </div>
+      <PageHero
+        eyebrow={`${greeting} ✊`}
+        title="Hi, Margherita"
+        action={
           <Link to="/about" className="home-avatar" aria-label="About this app">
             🏋️‍♀️
           </Link>
-        </div>
-
-        <div className="hero-stats">
-          <div className="hero-stat">
-            <span className="hero-stat-value">{workoutsThisWeek}</span>
-            <span className="hero-stat-label">workouts this week</span>
-          </div>
-          <div className="hero-stat">
-            <span className="hero-stat-value">{workouts.length}</span>
-            <span className="hero-stat-label">saved templates</span>
-          </div>
-        </div>
-      </header>
+        }
+        stats={[
+          { value: workoutsThisWeek, label: 'workouts this week' },
+          { value: workouts.length, label: 'saved templates' },
+        ]}
+      />
 
       {/* White sheet — sits in the thumb zone */}
       <main className="home-sheet">

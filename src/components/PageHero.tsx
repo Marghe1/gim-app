@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 export interface HeroStat {
@@ -20,30 +21,57 @@ interface PageHeroProps {
  * optional eyebrow line, and a row of stat "chips". The page's own content
  * goes inside a <main className="home-sheet"> that curves up over this hero,
  * matching the Home screen layout.
+ *
+ * As the big title scrolls out of view, a slim fixed "page-topbar" slides down
+ * and keeps the title pinned at the top (iOS/Revolut "large title" pattern).
+ * A sentinel placed just below the title is watched with an IntersectionObserver.
  */
 export default function PageHero({ title, eyebrow, stats, action, children }: PageHeroProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!('IntersectionObserver' in window) || !sentinelRef.current) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setCollapsed(!entry.isIntersecting),
+      { threshold: 0, rootMargin: '-8px 0px 0px 0px' }
+    );
+    obs.observe(sentinelRef.current);
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <header className="home-hero">
-      <div className="home-hero-top">
-        <div>
-          {eyebrow && <p className="home-eyebrow">{eyebrow}</p>}
-          <h1 className="home-title">{title}</h1>
-        </div>
+    <>
+      <div className={`page-topbar${collapsed ? ' is-visible' : ''}`}>
+        <span className="page-topbar-title">{title}</span>
         {action}
       </div>
 
-      {stats && stats.length > 0 && (
-        <div className="hero-stats">
-          {stats.map((s, i) => (
-            <div key={i} className="hero-stat">
-              <span className="hero-stat-value">{s.value}</span>
-              <span className="hero-stat-label">{s.label}</span>
-            </div>
-          ))}
+      <header className="home-hero">
+        <div className="home-hero-top">
+          <div>
+            {eyebrow && <p className="home-eyebrow">{eyebrow}</p>}
+            <h1 className="home-title">{title}</h1>
+          </div>
+          {action}
         </div>
-      )}
 
-      {children}
-    </header>
+        {/* Sentinel: when this scrolls past the top, the slim bar appears. */}
+        <div ref={sentinelRef} aria-hidden="true" />
+
+        {stats && stats.length > 0 && (
+          <div className="hero-stats">
+            {stats.map((s, i) => (
+              <div key={i} className="hero-stat">
+                <span className="hero-stat-value">{s.value}</span>
+                <span className="hero-stat-label">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {children}
+      </header>
+    </>
   );
 }
