@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Repeat, TrendingUp, Camera } from 'lucide-react';
+import { Dumbbell, Repeat, TrendingUp, Camera, User } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useT } from '../i18n/context';
 import { onboardingStrings } from '../i18n/strings/onboarding';
+import { getUserProfile, saveUserProfile } from '../utils/profileStorage';
 
 const SLIDES: { icon: LucideIcon; titleKey: string; bodyKey: string }[] = [
   { icon: Dumbbell, titleKey: 'slide1Title', bodyKey: 'slide1Body' },
@@ -21,12 +22,22 @@ interface OnboardingProps {
 export default function Onboarding({ open, onClose }: OnboardingProps) {
   const t = useT(onboardingStrings);
   const [step, setStep] = useState(0);
+  const [name, setName] = useState(() => getUserProfile().name ?? '');
 
   if (!open) return null;
 
-  const isLast = step === SLIDES.length - 1;
-  const slide = SLIDES[step];
-  const Icon = slide.icon;
+  // The final step (after the intro slides) asks for the user's name.
+  const nameStep = SLIDES.length;
+  const isNameStep = step === nameStep;
+  const isLast = isNameStep;
+  const slide = isNameStep ? null : SLIDES[step];
+  const Icon = slide?.icon ?? User;
+
+  function finish() {
+    const trimmed = name.trim();
+    if (trimmed) saveUserProfile({ ...getUserProfile(), name: trimmed });
+    onClose();
+  }
 
   return (
     <div
@@ -90,9 +101,30 @@ export default function Onboarding({ open, onClose }: OnboardingProps) {
         >
           <Icon size={44} />
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.2 }}>{t(slide.titleKey)}</h1>
-        <p style={{ fontSize: 16, lineHeight: 1.6, opacity: 0.95 }}>{t(slide.bodyKey)}</p>
-        {isLast && (
+        <h1 style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.2 }}>
+          {isNameStep ? t('nameStepTitle') : t(slide!.titleKey)}
+        </h1>
+        <p style={{ fontSize: 16, lineHeight: 1.6, opacity: 0.95 }}>
+          {isNameStep ? t('nameStepBody') : t(slide!.bodyKey)}
+        </p>
+        {isNameStep && (
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t('namePlaceholder')}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: 12,
+              border: 'none',
+              fontSize: 16,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--gray-900)',
+              textAlign: 'center',
+            }}
+          />
+        )}
+        {step === SLIDES.length - 1 && (
           <Link
             to="/privacy"
             onClick={onClose}
@@ -105,7 +137,7 @@ export default function Onboarding({ open, onClose }: OnboardingProps) {
 
       {/* Dots */}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
-        {SLIDES.map((_, i) => (
+        {Array.from({ length: SLIDES.length + 1 }).map((_, i) => (
           <span
             key={i}
             style={{
@@ -122,7 +154,7 @@ export default function Onboarding({ open, onClose }: OnboardingProps) {
       {/* Next / Get started */}
       <button
         className="btn btn-block"
-        onClick={() => (isLast ? onClose() : setStep((s) => s + 1))}
+        onClick={() => (isLast ? finish() : setStep((s) => s + 1))}
         style={{ background: 'white', color: 'var(--primary-dark)' }}
       >
         {isLast ? t('getStarted') : t('next')}

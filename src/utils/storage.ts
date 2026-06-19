@@ -164,6 +164,21 @@ export function saveSchedule(schedule: WorkoutSchedule): void {
   localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule));
 }
 
+const WEEK_PLAN_KEY = 'gymtrack_week_plan';
+
+// A reusable weekly routine: maps getDay() (0=Sun..6=Sat) to a workout id
+// ('' / missing = rest). Remembered so the planner pre-fills each month.
+export type WeekPlan = Record<number, string>;
+
+export function getWeekPlan(): WeekPlan {
+  const data = localStorage.getItem(WEEK_PLAN_KEY);
+  return data ? JSON.parse(data) : {};
+}
+
+export function saveWeekPlan(plan: WeekPlan): void {
+  localStorage.setItem(WEEK_PLAN_KEY, JSON.stringify(plan));
+}
+
 const defaultExercises: Exercise[] = [
   // Original exercises
   { id: '1', name: 'Squat', muscleGroup: 'Legs' },

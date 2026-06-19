@@ -18,6 +18,9 @@ export const onboardingStrings: Strings = {
     slide4Body:
       'Track your “glow up” with progress photos that never leave your phone. Export a backup any time to keep your data safe.',
     slide4PrivacyLink: 'Read how your data is kept private',
+    nameStepTitle: 'What’s your name?',
+    nameStepBody: 'Add your name to personalise the app. You can add a photo and more later in your profile.',
+    namePlaceholder: 'Your name (optional)',
   },
   it: {
     skip: 'Salta',
@@ -36,6 +39,9 @@ export const onboardingStrings: Strings = {
     slide4Body:
       'Segui il tuo “glow up” con foto dei progressi che non lasciano mai il telefono. Esporta un backup quando vuoi per mettere al sicuro i tuoi dati.',
     slide4PrivacyLink: 'Scopri come i tuoi dati restano privati',
+    nameStepTitle: 'Come ti chiami?',
+    nameStepBody: 'Aggiungi il tuo nome per personalizzare l’app. Potrai aggiungere una foto e altro più tardi nel tuo profilo.',
+    namePlaceholder: 'Il tuo nome (facoltativo)',
   },
   fr: {
     skip: 'Passer',
@@ -54,5 +60,8 @@ export const onboardingStrings: Strings = {
     slide4Body:
       'Suis ton « glow up » avec des photos de progression qui ne quittent jamais ton téléphone. Exporte une sauvegarde à tout moment pour garder tes données en sécurité.',
     slide4PrivacyLink: 'Découvre comment tes données restent privées',
+    nameStepTitle: 'Comment t’appelles-tu ?',
+    nameStepBody: 'Ajoute ton nom pour personnaliser l’appli. Tu pourras ajouter une photo et plus dans ton profil plus tard.',
+    namePlaceholder: 'Ton nom (facultatif)',
   },
 };

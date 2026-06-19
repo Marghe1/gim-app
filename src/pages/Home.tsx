@@ -27,9 +27,12 @@ export default function Home() {
   const workouts = getWorkouts();
   const logs = getWorkoutLogs();
 
-  // Friendly greeting based on the time of day
+  const profile = getUserProfile();
+
+  // Friendly greeting based on the time of day, with the user's name if set.
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
+  const baseGreeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
+  const greeting = profile.name ? `${baseGreeting}, ${profile.name}` : baseGreeting;
 
   // Next planned session: the soonest scheduled day from today onwards whose
   // workout still exists.
@@ -110,8 +113,16 @@ export default function Home() {
         eyebrow={`${greeting} ✊`}
         title={t('title')}
         action={
-          <Link to="/about" className="home-avatar" aria-label={t('aboutAppAria')}>
-            🏋️‍♀️
+          <Link to="/profile" className="home-avatar" aria-label={t('aboutAppAria')}>
+            {profile.avatar ? (
+              <img
+                src={profile.avatar}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+              />
+            ) : (
+              '🏋️‍♀️'
+            )}
           </Link>
         }
         stats={[

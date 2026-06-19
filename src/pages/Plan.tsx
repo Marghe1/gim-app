@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, Play, X, Trash2 } from 'lucide-react';
 import type { Workout, WorkoutSchedule } from '../utils/storage';
-import { getWorkouts, getSchedule, saveSchedule, localDateKey } from '../utils/storage';
+import { getWorkouts, getSchedule, saveSchedule, getWeekPlan, saveWeekPlan, localDateKey } from '../utils/storage';
 import PageHero from '../components/PageHero';
 import { useT, useLang } from '../i18n/context';
 import { planStrings } from '../i18n/strings/plan';
@@ -44,7 +44,8 @@ export default function Plan() {
   const [pickerDate, setPickerDate] = useState<string | null>(null);
   // Weekly planner modal: build a getDay() -> workout id map ('' = rest day).
   const [showWeekPlanner, setShowWeekPlanner] = useState(false);
-  const [weekPlan, setWeekPlan] = useState<Record<number, string>>({});
+  // Remembered weekly routine — pre-fills the planner each time.
+  const [weekPlan, setWeekPlan] = useState<Record<number, string>>(() => getWeekPlan());
 
   const monthPrefix = `${view.year}-${String(view.month + 1).padStart(2, '0')}-`;
 
@@ -90,7 +91,7 @@ export default function Plan() {
       alert(t('addWorkoutFirst'));
       return;
     }
-    setWeekPlan({});
+    setWeekPlan(getWeekPlan());
     setShowWeekPlanner(true);
   }
 
@@ -99,6 +100,7 @@ export default function Plan() {
   // are cleared, so the month matches the week shown.
   function applyWeekPlan() {
     if (!confirm(t('confirmWeekPlan', { month: monthLabel(view.year, view.month) }))) return;
+    saveWeekPlan(weekPlan); // remember the routine for next time
     const next = { ...schedule };
     const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
     for (let d = 1; d <= daysInMonth; d++) {
