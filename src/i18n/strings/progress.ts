@@ -3,7 +3,7 @@ import type { Strings } from '../context';
 export const progressStrings: Strings = {
   en: {
     title: 'Progress',
-    eyebrowDefault: 'Monitor your progress with time',
+    eyebrowDefault: 'Monitor your progress over time',
     eyebrowSame: '= same as last week',
     eyebrowUp: '↑ {n} vs last week',
     eyebrowDown: '↓ {n} vs last week',
