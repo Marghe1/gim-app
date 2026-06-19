@@ -14,16 +14,21 @@ import {
 } from 'lucide-react';
 import { getWorkouts, getWorkoutLogs, getExercises, getSchedule, localDateKey } from '../utils/storage';
 import PageHero from '../components/PageHero';
+import { useT, useLang } from '../i18n/context';
+import { localeFor } from '../i18n/data';
+import { homeStrings } from '../i18n/strings/home';
 
 export default function Home() {
   const navigate = useNavigate();
+  const t = useT(homeStrings);
+  const { lang } = useLang();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const workouts = getWorkouts();
   const logs = getWorkoutLogs();
 
   // Friendly greeting based on the time of day
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
 
   // Next planned session: the soonest scheduled day from today onwards whose
   // workout still exists.
@@ -74,19 +79,19 @@ export default function Home() {
         const data = JSON.parse(e.target?.result as string);
 
         if (!data.version || !data.exercises || !data.workouts || !data.workoutLogs) {
-          alert('Invalid backup file format');
+          alert(t('invalidBackup'));
           return;
         }
 
-        if (confirm('This will replace all your current data. Continue?')) {
+        if (confirm(t('confirmRestore'))) {
           localStorage.setItem('gymtrack_exercises', JSON.stringify(data.exercises));
           localStorage.setItem('gymtrack_workouts', JSON.stringify(data.workouts));
           localStorage.setItem('gymtrack_workout_logs', JSON.stringify(data.workoutLogs));
-          alert('Data restored successfully!');
+          alert(t('restoreSuccess'));
           window.location.reload();
         }
       } catch {
-        alert('Error reading backup file');
+        alert(t('restoreError'));
       }
     };
     reader.readAsText(file);
@@ -102,15 +107,15 @@ export default function Home() {
       {/* Colourful hero */}
       <PageHero
         eyebrow={`${greeting} ✊`}
-        title="Hi, Margherita"
+        title={t('title')}
         action={
-          <Link to="/about" className="home-avatar" aria-label="About this app">
+          <Link to="/about" className="home-avatar" aria-label={t('aboutAppAria')}>
             🏋️‍♀️
           </Link>
         }
         stats={[
-          { value: workoutsThisWeek, label: 'workouts this week' },
-          { value: workouts.length, label: 'saved templates' },
+          { value: workoutsThisWeek, label: t('statWorkoutsThisWeek') },
+          { value: workouts.length, label: t('statSavedTemplates') },
         ]}
       />
 
@@ -122,14 +127,14 @@ export default function Home() {
               <CalendarClock size={16} />
               <span style={{ fontSize: 13, fontWeight: 700 }}>
                 {nextEntry.k === todayKey
-                  ? 'Today'
-                  : new Date(`${nextEntry.k}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
+                  ? t('today')
+                  : new Date(`${nextEntry.k}T00:00:00`).toLocaleDateString(localeFor(lang), { weekday: 'long', day: 'numeric', month: 'short' })}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <span style={{ fontWeight: 700 }}>{nextEntry.workout.name}</span>
               <button className="btn btn-primary btn-sm" onClick={() => navigate(`/workout/${nextEntry.workout!.id}`)}>
-                <Play size={16} /> Start
+                <Play size={16} /> {t('start')}
               </button>
             </div>
           </div>
@@ -137,41 +142,41 @@ export default function Home() {
 
         <Link to="/workouts" className="cta-primary">
           <Play size={22} fill="white" />
-          Start a workout
+          {t('startAWorkout')}
         </Link>
 
         {/* Colourful shortcuts */}
         <div className="quick-grid">
           <Link to="/exercises" className="quick-tile">
             <span className="quick-icon" data-accent="mint"><Dumbbell size={22} /></span>
-            Exercises
+            {t('exercises')}
           </Link>
           <Link to="/plan" className="quick-tile">
             <span className="quick-icon" data-accent="lavender"><CalendarDays size={22} /></span>
-            Plan
+            {t('plan')}
           </Link>
           <Link to="/progress" className="quick-tile">
             <span className="quick-icon" data-accent="coral"><TrendingUp size={22} /></span>
-            Progress
+            {t('progress')}
           </Link>
           <Link to="/photos" className="quick-tile">
             <span className="quick-icon" data-accent="amber"><Camera size={22} /></span>
-            Photos
+            {t('photos')}
           </Link>
         </div>
 
         {logs.length > 0 && (
           <>
-            <h3 className="section-title">Recent activity</h3>
+            <h3 className="section-title">{t('recentActivity')}</h3>
             {logs.slice(-3).reverse().map(log => (
               <div key={log.id} className="card">
                 <div className="card-header">
                   <span className="card-title">{log.workoutName}</span>
-                  <span className="badge badge-primary">{log.completed ? 'Completed' : 'In Progress'}</span>
+                  <span className="badge badge-primary">{log.completed ? t('completed') : t('inProgress')}</span>
                 </div>
                 <div className="card-subtitle">
                   <Calendar size={14} style={{ display: 'inline', marginRight: 4 }} />
-                  {new Date(log.date).toLocaleDateString()}
+                  {new Date(log.date).toLocaleDateString(localeFor(lang))}
                 </div>
               </div>
             ))}
@@ -181,7 +186,7 @@ export default function Home() {
         {logs.length === 0 && (
           <div className="empty-state" style={{ marginTop: 16 }}>
             <Calendar size={48} />
-            <p>No workouts yet. Start your first one to see your activity here!</p>
+            <p>{t('emptyState')}</p>
           </div>
         )}
 
@@ -189,12 +194,12 @@ export default function Home() {
         <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--gray-200)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: 'var(--gray-600)' }}>
             <Settings size={18} />
-            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Data backup</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>{t('dataBackup')}</h3>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button className="btn btn-secondary" style={{ flex: 1 }} onClick={exportData}>
               <Download size={18} />
-              Export
+              {t('export')}
             </button>
             <button
               className="btn btn-secondary"
@@ -202,7 +207,7 @@ export default function Home() {
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload size={18} />
-              Import
+              {t('import')}
             </button>
             <input
               ref={fileInputRef}
@@ -213,7 +218,7 @@ export default function Home() {
             />
           </div>
           <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 8, textAlign: 'center' }}>
-            Export your data to a file for backup or transfer to another device
+            {t('backupHint')}
           </p>
         </div>
 
@@ -223,7 +228,7 @@ export default function Home() {
             to="/about"
             style={{ fontSize: 12, color: 'var(--gray-400)', textDecoration: 'none' }}
           >
-            About this app
+            {t('aboutThisApp')}
           </Link>
         </div>
       </main>

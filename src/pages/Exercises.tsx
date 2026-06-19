@@ -5,6 +5,9 @@ import { v4 as uuid } from 'uuid';
 import type { Exercise } from '../utils/storage';
 import { getExercises, saveExercise, deleteExercise } from '../utils/storage';
 import PageHero from '../components/PageHero';
+import { useT, useLang } from '../i18n/context';
+import { exercisesStrings } from '../i18n/strings/exercises';
+import { translateExercise, translateMuscle } from '../i18n/data';
 
 const MUSCLE_GROUPS = ['All', 'Legs', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core', 'Full Body', 'Warm-up', 'Stretching', 'Glutes', 'Cardio', 'Plyometrics'];
 
@@ -39,6 +42,8 @@ function calculateWeight(muscleGroup: string, level: number): number {
 
 export default function Exercises() {
   const navigate = useNavigate();
+  const t = useT(exercisesStrings);
+  const { lang } = useLang();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
@@ -113,7 +118,7 @@ export default function Exercises() {
   }
 
   function handleDelete(id: string) {
-    if (confirm('Delete this exercise?')) {
+    if (confirm(t('confirmDelete'))) {
       deleteExercise(id);
       loadExercises();
     }
@@ -137,11 +142,11 @@ export default function Exercises() {
 
   // Get level label
   const getLevelLabel = (level: number): string => {
-    if (level <= 2) return 'Beginner';
-    if (level <= 4) return 'Novice';
-    if (level <= 6) return 'Intermediate';
-    if (level <= 8) return 'Advanced';
-    return 'Expert';
+    if (level <= 2) return t('levelBeginner');
+    if (level <= 4) return t('levelNovice');
+    if (level <= 6) return t('levelIntermediate');
+    if (level <= 8) return t('levelAdvanced');
+    return t('levelExpert');
   };
 
   // Count exercises that will get weights
@@ -151,11 +156,14 @@ export default function Exercises() {
   return (
     <div className="home">
       <PageHero
-        eyebrow="Your exercise library"
-        title="Exercises"
+        eyebrow={t('heroEyebrow')}
+        title={t('title')}
         stats={[
-          { value: exercises.length, label: exercises.length === 1 ? 'exercise' : 'exercises' },
-          { value: muscleGroupCount, label: 'muscle groups' },
+          {
+            value: exercises.length,
+            label: exercises.length === 1 ? t('statExerciseSingular') : t('statExercisePlural'),
+          },
+          { value: muscleGroupCount, label: t('statMuscleGroups') },
         ]}
       />
 
@@ -170,7 +178,7 @@ export default function Exercises() {
           color: 'white',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Quick Weight Setup</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{t('quickSetupTitle')}</h3>
             <button
               className="btn btn-ghost"
               onClick={() => setShowQuickSetup(false)}
@@ -181,7 +189,7 @@ export default function Exercises() {
           </div>
 
           <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 20 }}>
-            Drag the slider to set starting weights for all exercises based on your strength level.
+            {t('quickSetupIntro')}
           </p>
 
           {/* Strength Level Display */}
@@ -208,8 +216,8 @@ export default function Exercises() {
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, opacity: 0.7, marginTop: 8 }}>
-              <span>1 - Beginner</span>
-              <span>10 - Expert</span>
+              <span>{t('sliderMin')}</span>
+              <span>{t('sliderMax')}</span>
             </div>
           </div>
 
@@ -220,19 +228,19 @@ export default function Exercises() {
             padding: 12,
             marginBottom: 16,
           }}>
-            <div style={{ fontSize: 14, marginBottom: 8 }}>Preview:</div>
+            <div style={{ fontSize: 14, marginBottom: 8 }}>{t('previewLabel')}</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 13 }}>
-              <div>Legs: <strong>{calculateWeight('Legs', strengthLevel)}kg</strong></div>
-              <div>Back: <strong>{calculateWeight('Back', strengthLevel)}kg</strong></div>
-              <div>Chest: <strong>{calculateWeight('Chest', strengthLevel)}kg</strong></div>
-              <div>Shoulders: <strong>{calculateWeight('Shoulders', strengthLevel)}kg</strong></div>
-              <div>Arms: <strong>{calculateWeight('Arms', strengthLevel)}kg</strong></div>
-              <div>Full Body: <strong>{calculateWeight('Full Body', strengthLevel)}kg</strong></div>
+              <div>{translateMuscle(lang, 'Legs')}: <strong>{calculateWeight('Legs', strengthLevel)}kg</strong></div>
+              <div>{translateMuscle(lang, 'Back')}: <strong>{calculateWeight('Back', strengthLevel)}kg</strong></div>
+              <div>{translateMuscle(lang, 'Chest')}: <strong>{calculateWeight('Chest', strengthLevel)}kg</strong></div>
+              <div>{translateMuscle(lang, 'Shoulders')}: <strong>{calculateWeight('Shoulders', strengthLevel)}kg</strong></div>
+              <div>{translateMuscle(lang, 'Arms')}: <strong>{calculateWeight('Arms', strengthLevel)}kg</strong></div>
+              <div>{translateMuscle(lang, 'Full Body')}: <strong>{calculateWeight('Full Body', strengthLevel)}kg</strong></div>
             </div>
           </div>
 
           <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 16 }}>
-            {exercisesWithWeights} exercises will be updated. Core, warm-up, and cardio stay at 0kg.
+            {t('quickSetupSummary', { count: exercisesWithWeights })}
           </p>
 
           <button
@@ -246,7 +254,7 @@ export default function Exercises() {
             }}
           >
             <Check size={18} />
-            Apply Weights to All Exercises
+            {t('applyWeights')}
           </button>
         </div>
       ) : (
@@ -256,7 +264,7 @@ export default function Exercises() {
           style={{ marginBottom: 16 }}
         >
           <Sliders size={18} />
-          Quick Weight Setup
+          {t('quickSetupTitle')}
         </button>
       )}
 
@@ -264,7 +272,7 @@ export default function Exercises() {
         <Search />
         <input
           type="text"
-          placeholder="Search exercises..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -277,14 +285,14 @@ export default function Exercises() {
             className={`filter-tab ${filter === group ? 'active' : ''}`}
             onClick={() => setFilter(group)}
           >
-            {group}
+            {group === 'All' ? t('filterAll') : translateMuscle(lang, group)}
           </button>
         ))}
       </div>
 
       <button className="btn btn-primary btn-block" onClick={openAddModal} style={{ marginBottom: 16 }}>
         <Plus size={20} />
-        Add Exercise
+        {t('addExercise')}
       </button>
 
       <div className="list">
@@ -305,9 +313,9 @@ export default function Exercises() {
               onClick={() => !showQuickSetup && navigate(`/exercise/${exercise.id}`)}
             >
               <div className="list-item-content">
-                <div className="list-item-title">{exercise.name}</div>
+                <div className="list-item-title">{translateExercise(lang, exercise.name)}</div>
                 <div className="list-item-subtitle">
-                  {exercise.muscleGroup}
+                  {translateMuscle(lang, exercise.muscleGroup)}
                   {showQuickSetup ? (
                     // Show preview weight in quick setup mode
                     previewWeight > 0 ? (
@@ -323,7 +331,7 @@ export default function Exercises() {
                         )}
                       </span>
                     ) : currentWeight ? (
-                      <span style={{ marginLeft: 8, opacity: 0.5 }}>{currentWeight}kg (no change)</span>
+                      <span style={{ marginLeft: 8, opacity: 0.5 }}>{currentWeight}kg {t('noChange')}</span>
                     ) : null
                   ) : (
                     // Normal mode - show current weight
@@ -355,7 +363,7 @@ export default function Exercises() {
 
       {filteredExercises.length === 0 && (
         <div className="empty-state">
-          <p>No exercises found. Add your first exercise!</p>
+          <p>{t('emptyState')}</p>
         </div>
       )}
 
@@ -364,7 +372,7 @@ export default function Exercises() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">
-                {editingExercise ? 'Edit Exercise' : 'Add Exercise'}
+                {editingExercise ? t('editExercise') : t('addExercise')}
               </h2>
               <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
                 <X size={24} />
@@ -372,11 +380,11 @@ export default function Exercises() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Exercise Name</label>
+              <label className="form-label">{t('exerciseNameLabel')}</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g., Squat"
+                placeholder={t('exerciseNamePlaceholder')}
                 value={formName}
                 onChange={e => setFormName(e.target.value)}
                 autoFocus
@@ -384,49 +392,49 @@ export default function Exercises() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Muscle Group</label>
+              <label className="form-label">{t('muscleGroupLabel')}</label>
               <select
                 className="form-select"
                 value={formMuscleGroup}
                 onChange={e => setFormMuscleGroup(e.target.value)}
               >
                 {MUSCLE_GROUPS.filter(g => g !== 'All').map(group => (
-                  <option key={group} value={group}>{group}</option>
+                  <option key={group} value={group}>{translateMuscle(lang, group)}</option>
                 ))}
               </select>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('notesLabel')}</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="Any notes about this exercise..."
+                placeholder={t('notesPlaceholder')}
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Video URL (optional)</label>
+              <label className="form-label">{t('videoUrlLabel')}</label>
               <input
                 type="url"
                 className="form-input"
-                placeholder="https://youtube.com/..."
+                placeholder={t('videoUrlPlaceholder')}
                 value={formVideoUrl}
                 onChange={e => setFormVideoUrl(e.target.value)}
               />
               <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                Leave empty to auto-search YouTube by exercise name
+                {t('videoUrlHint')}
               </p>
             </div>
 
             <div className="modal-actions">
               <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)}>
-                Cancel
+                {t('cancel')}
               </button>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave}>
-                {editingExercise ? 'Save Changes' : 'Add Exercise'}
+                {editingExercise ? t('saveChanges') : t('addExercise')}
               </button>
             </div>
           </div>

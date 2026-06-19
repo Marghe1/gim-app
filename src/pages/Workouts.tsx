@@ -5,9 +5,14 @@ import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutExercise, Exercise, WorkoutTemplate } from '../utils/storage';
 import { getWorkouts, saveWorkout, deleteWorkout, getExercises, getWorkoutTemplates, getTimedExerciseIds, getExerciseGroups, formatCount } from '../utils/storage';
 import PageHero from '../components/PageHero';
+import { useT, useLang } from '../i18n/context';
+import { workoutsStrings } from '../i18n/strings/workouts';
+import { translateExercise, translateCategory, translateTemplateName, translateTemplateDesc } from '../i18n/data';
 
 export default function Workouts() {
   const navigate = useNavigate();
+  const t = useT(workoutsStrings);
+  const { lang } = useLang();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
@@ -77,7 +82,7 @@ export default function Workouts() {
   }
 
   function handleDeleteWorkout(id: string) {
-    if (confirm('Delete this workout template?')) {
+    if (confirm(t('confirmDeleteWorkout'))) {
       deleteWorkout(id);
       loadData();
     }
@@ -163,7 +168,7 @@ export default function Workouts() {
   // updated in place (matched by name) so existing workouts pick up the circuit
   // grouping without creating duplicates and without breaking history links.
   function importAllTemplates() {
-    if (!confirm(`Add or update all ${templates.length} PT sessions in My Workouts? Already-imported ones will be refreshed with the new circuits.`)) {
+    if (!confirm(t('confirmImportAll', { n: templates.length }))) {
       return;
     }
     const existing = getWorkouts();
@@ -186,7 +191,7 @@ export default function Workouts() {
     setShowTemplates(false);
     setExpandedTemplate(null);
     setShowForm(false);
-    alert(`Done! All ${templates.length} sessions are in My Workouts with their circuits.`);
+    alert(t('importDone', { n: templates.length }));
   }
 
   function toggleTemplateExpand(templateId: string) {
@@ -199,27 +204,27 @@ export default function Workouts() {
     return (
       <div className="home">
         <PageHero
-          eyebrow="Your circuit templates"
-          title="Workouts"
+          eyebrow={t('heroEyebrow')}
+          title={t('heroTitle')}
           stats={[
-            { value: workouts.length, label: workouts.length === 1 ? 'saved template' : 'saved templates' },
-            { value: totalExercises, label: 'exercises in total' },
+            { value: workouts.length, label: workouts.length === 1 ? t('statSavedTemplate') : t('statSavedTemplates') },
+            { value: totalExercises, label: t('statExercisesTotal') },
           ]}
         />
 
         <main className="home-sheet">
         <button className="btn btn-primary btn-block" onClick={openNewForm} style={{ marginBottom: 16 }}>
           <Plus size={20} />
-          Create Workout
+          {t('createWorkout')}
         </button>
 
         {workouts.length === 0 ? (
           <div className="empty-state">
-            <p style={{ marginBottom: 16 }}>No workouts yet. Add the ready-made PT sessions, or create your own.</p>
+            <p style={{ marginBottom: 16 }}>{t('emptyNoWorkouts')}</p>
             {templates.length > 0 && (
               <button className="btn btn-primary btn-block" onClick={importAllTemplates}>
                 <Copy size={18} />
-                Add all {templates.length} PT session templates
+                {t('addAllTemplates', { n: templates.length })}
               </button>
             )}
           </div>
@@ -230,7 +235,9 @@ export default function Workouts() {
                 <div className="list-item-content">
                   <div className="list-item-title">{workout.name}</div>
                   <div className="list-item-subtitle">
-                    {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
+                    {workout.exercises.length !== 1
+                      ? t('exerciseCountPlural', { n: workout.exercises.length })
+                      : t('exerciseCount', { n: workout.exercises.length })}
                   </div>
                 </div>
                 <div className="list-item-actions" style={{ gap: 8 }}>
@@ -238,7 +245,7 @@ export default function Workouts() {
                     className="btn btn-primary btn-sm"
                     onClick={() => navigate(`/workout/${workout.id}`)}
                   >
-                    <Play size={16} /> Start
+                    <Play size={16} /> {t('start')}
                   </button>
                   <button className="btn btn-ghost" onClick={() => openEditForm(workout)}>
                     <Pencil size={18} />
@@ -266,8 +273,8 @@ export default function Workouts() {
     <div className="page">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 className="page-title">{editingWorkout ? 'Edit Workout' : 'New Workout'}</h1>
-          <p className="page-subtitle">Build your circuit template</p>
+          <h1 className="page-title">{editingWorkout ? t('editWorkout') : t('newWorkout')}</h1>
+          <p className="page-subtitle">{t('builderSubtitle')}</p>
         </div>
         <button className="btn btn-ghost" onClick={() => setShowForm(false)}>
           <X size={24} />
@@ -289,7 +296,7 @@ export default function Workouts() {
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <BookOpen size={18} />
-              Start from a template ({templates.length})
+              {t('startFromTemplate', { n: templates.length })}
             </span>
             {showTemplates ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </button>
@@ -302,7 +309,7 @@ export default function Workouts() {
                 style={{ marginBottom: 12 }}
               >
                 <Copy size={16} />
-                Import all {templates.length} sessions
+                {t('importAllSessions', { n: templates.length })}
               </button>
               <div className="list" style={{ background: 'var(--color-surface)', borderRadius: 8 }}>
                 {templates.map(template => (
@@ -319,9 +326,9 @@ export default function Workouts() {
                         <ChevronRight size={16} />
                       )}
                       <div className="list-item-content">
-                        <div className="list-item-title">{template.name}</div>
+                        <div className="list-item-title">{translateTemplateName(lang, template.name)}</div>
                         <div className="list-item-subtitle">
-                          {template.exercises.length} exercises • {template.category}
+                          {t('templateSummary', { n: template.exercises.length, category: translateCategory(lang, template.category) })}
                         </div>
                       </div>
                     </div>
@@ -331,7 +338,7 @@ export default function Workouts() {
                     <div style={{ padding: '0 16px 16px 16px' }}>
                       {template.description && (
                         <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', marginBottom: 12 }}>
-                          {template.description}
+                          {translateTemplateDesc(lang, template.description)}
                         </p>
                       )}
                       <div style={{
@@ -341,7 +348,7 @@ export default function Workouts() {
                         marginBottom: 12,
                       }}>
                         <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--color-text-secondary)' }}>
-                          EXERCISES
+                          {t('exercisesHeading')}
                         </div>
                         {(() => {
                           const subLabels: Record<number, string> = {};
@@ -363,9 +370,9 @@ export default function Workouts() {
                                 {subLabels[idx]}
                               </span>
                               <span style={{ flex: 1 }}>
-                                <span style={{ fontWeight: 500 }}>{ex.exerciseName}</span>
+                                <span style={{ fontWeight: 500 }}>{translateExercise(lang, ex.exerciseName)}</span>
                                 <span style={{ color: 'var(--color-text-secondary)', marginLeft: 8 }}>
-                                  {ex.targetSets} × {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true) : ex.targetReps}
+                                  {ex.targetSets} × {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true, lang) : ex.targetReps}
                                 </span>
                               </span>
                             </div>
@@ -380,7 +387,7 @@ export default function Workouts() {
                         }}
                       >
                         <Copy size={16} />
-                        Use This Template
+                        {t('useThisTemplate')}
                       </button>
                     </div>
                   )}
@@ -393,22 +400,22 @@ export default function Workouts() {
       )}
 
       <div className="form-group">
-        <label className="form-label">Workout Name</label>
+        <label className="form-label">{t('workoutName')}</label>
         <input
           type="text"
           className="form-input"
-          placeholder="e.g., Monday Upper Body"
+          placeholder={t('workoutNamePlaceholder')}
           value={formName}
           onChange={e => setFormName(e.target.value)}
         />
       </div>
 
       <div className="form-group">
-        <label className="form-label">Description (optional)</label>
+        <label className="form-label">{t('descriptionOptional')}</label>
         <input
           type="text"
           className="form-input"
-          placeholder="e.g., Focus on chest and shoulders"
+          placeholder={t('descriptionPlaceholder')}
           value={formDescription}
           onChange={e => setFormDescription(e.target.value)}
         />
@@ -416,22 +423,21 @@ export default function Workouts() {
 
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <label className="form-label" style={{ margin: 0 }}>Exercises</label>
+          <label className="form-label" style={{ margin: 0 }}>{t('exercises')}</label>
           <button className="btn btn-secondary btn-sm" onClick={openAddExerciseModal}>
             <Plus size={16} />
-            Add
+            {t('add')}
           </button>
         </div>
 
         {formExercises.length === 0 ? (
           <div className="empty-state" style={{ padding: 20 }}>
-            <p>No exercises yet. Add exercises to your workout.</p>
+            <p>{t('emptyNoExercises')}</p>
           </div>
         ) : (
           <>
             <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
-              Tap the chain icon to link an exercise into a circuit (alternating
-              sets) with the one above it.
+              {t('circuitHint')}
             </p>
             <div className="list">
               {formExercises.map((ex, index) => {
@@ -459,9 +465,9 @@ export default function Workouts() {
                         {subLabelByIndex[index]}
                       </span>
                       <div className="list-item-content">
-                        <div className="list-item-title">{ex.exerciseName}</div>
+                        <div className="list-item-title">{translateExercise(lang, ex.exerciseName)}</div>
                         <div className="list-item-subtitle">
-                          {ex.targetSets} sets x {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true) : `${ex.targetReps} reps`} • {ex.restSeconds}s rest
+                          {ex.targetSets} {t('setsLabel')} x {timedIds.has(ex.exerciseId) ? formatCount(ex.targetReps, true, lang) : `${ex.targetReps} ${t('repsLabel')}`} • {ex.restSeconds}s {t('restLabel')}
                         </div>
                       </div>
                     </div>
@@ -469,7 +475,7 @@ export default function Workouts() {
                       {index > 0 && (
                         <button
                           className="btn btn-ghost"
-                          title={linked ? 'Split from circuit above' : 'Link into a circuit with the exercise above'}
+                          title={linked ? t('splitFromCircuit') : t('linkIntoCircuit')}
                           onClick={() => linked ? unlinkFromAbove(index) : linkWithAbove(index)}
                           style={{ color: linked ? 'var(--color-primary, #16C79A)' : undefined }}
                         >
@@ -490,7 +496,7 @@ export default function Workouts() {
 
       <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
         <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowForm(false)}>
-          Cancel
+          {t('cancel')}
         </button>
         <button
           className="btn btn-primary"
@@ -498,7 +504,7 @@ export default function Workouts() {
           onClick={handleSaveWorkout}
           disabled={!formName.trim() || formExercises.length === 0}
         >
-          {editingWorkout ? 'Save Changes' : 'Create Workout'}
+          {editingWorkout ? t('saveChanges') : t('createWorkout')}
         </button>
       </div>
 
@@ -507,28 +513,28 @@ export default function Workouts() {
         <div className="modal-overlay" onClick={() => setShowAddExercise(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Add Exercise</h2>
+              <h2 className="modal-title">{t('addExercise')}</h2>
               <button className="btn btn-ghost" onClick={() => setShowAddExercise(false)}>
                 <X size={24} />
               </button>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Exercise</label>
+              <label className="form-label">{t('exercise')}</label>
               <select
                 className="form-select"
                 value={selectedExerciseId}
                 onChange={e => setSelectedExerciseId(e.target.value)}
               >
                 {exercises.map(ex => (
-                  <option key={ex.id} value={ex.id}>{ex.name}</option>
+                  <option key={ex.id} value={ex.id}>{translateExercise(lang, ex.name)}</option>
                 ))}
               </select>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="form-group">
-                <label className="form-label">Sets</label>
+                <label className="form-label">{t('sets')}</label>
                 <input
                   type="number"
                   className="form-input"
@@ -539,7 +545,7 @@ export default function Workouts() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">{timedIds.has(selectedExerciseId) ? 'Seconds' : 'Reps'}</label>
+                <label className="form-label">{timedIds.has(selectedExerciseId) ? t('seconds') : t('reps')}</label>
                 <input
                   type="number"
                   className="form-input"
@@ -552,7 +558,7 @@ export default function Workouts() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Rest between sets (seconds)</label>
+              <label className="form-label">{t('restBetweenSets')}</label>
               <input
                 type="number"
                 className="form-input"
@@ -566,10 +572,10 @@ export default function Workouts() {
 
             <div className="modal-actions">
               <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowAddExercise(false)}>
-                Cancel
+                {t('cancel')}
               </button>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExercise}>
-                Add Exercise
+                {t('addExercise')}
               </button>
             </div>
           </div>

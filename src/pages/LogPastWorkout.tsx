@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { X, Minus, Plus, Trash2, Check } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutLog, ExerciseLog } from '../utils/storage';
 import {
   getWorkouts,
+  getWorkoutLogs,
   saveWorkoutLog,
   getExercises,
   getLastWeightForExercise,
@@ -13,6 +14,9 @@ import {
   formatCount,
   localDateKey,
 } from '../utils/storage';
+import { useT, useLang } from '../i18n/context';
+import { logPastWorkoutStrings } from '../i18n/strings/logPastWorkout';
+import { translateExercise, translateTemplateName } from '../i18n/data';
 
 // Build the starting set logs for a chosen workout, pre-filling weight/reps from
 // the most recent matching session (falling back to last-used weight, then the
@@ -45,9 +49,16 @@ function buildExerciseLogs(workout: Workout): ExerciseLog[] {
 
 export default function LogPastWorkout() {
   const navigate = useNavigate();
+  const { logId } = useParams();
+  const t = useT(logPastWorkoutStrings);
+  const { lang } = useLang();
 
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [timedIds] = useState<Set<string>>(() => getTimedExerciseIds());
+
+  // When set, we're editing an existing history entry rather than adding a new
+  // one. We keep its id/workoutId/workoutName so the saved log replaces it.
+  const [editLog, setEditLog] = useState<WorkoutLog | null>(null);
 
   const [selectedWorkoutId, setSelectedWorkoutId] = useState('');
   const [date, setDate] = useState(() => localDateKey(new Date()));
@@ -56,11 +67,29 @@ export default function LogPastWorkout() {
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
 
+  const isEditing = !!logId;
   const today = localDateKey(new Date());
 
   useEffect(() => {
     setWorkouts(getWorkouts());
-  }, []);
+
+    if (logId) {
+      const existing = getWorkoutLogs().find(l => l.id === logId);
+      if (existing) {
+        setEditLog(existing);
+        setSelectedWorkoutId(existing.workoutId);
+        setDate(localDateKey(new Date(existing.date)));
+        setDurationMin(existing.duration > 0 ? String(Math.round(existing.duration / 60)) : '');
+        setNote(existing.notes || '');
+        // Deep-copy so edits don't mutate the stored object until we save.
+        setExerciseLogs(existing.exercises.map(ex => ({
+          ...ex,
+          sets: ex.sets.map(s => ({ ...s })),
+        })));
+        setSkipped(new Set());
+      }
+    }
+  }, [logId]);
 
   function chooseWorkout(id: string) {
     setSelectedWorkoutId(id);
@@ -118,8 +147,13 @@ export default function LogPastWorkout() {
   }
 
   function handleSave() {
+    // The workout name/id come from the log being edited, or the chosen
+    // template when adding a new one. (The template may since have been deleted,
+    // so when editing we rely on the values stored on the log itself.)
     const workout = workouts.find(w => w.id === selectedWorkoutId);
-    if (!workout) return;
+    const workoutId = editLog?.workoutId ?? workout?.id;
+    const workoutName = editLog?.workoutName ?? workout?.name;
+    if (!workoutId || !workoutName) return;
 
     // Build the log date at noon of the chosen day so the calendar day lines up
     // regardless of timezone.
@@ -132,9 +166,9 @@ export default function LogPastWorkout() {
     const exercises = exerciseLogs.filter((_, idx) => !skipped.has(idx));
 
     const log: WorkoutLog = {
-      id: uuid(),
-      workoutId: workout.id,
-      workoutName: workout.name,
+      id: editLog?.id ?? uuid(),
+      workoutId,
+      workoutName,
       date: when.toISOString(),
       duration,
       exercises,
@@ -160,40 +194,51 @@ export default function LogPastWorkout() {
         <button className="btn btn-ghost" onClick={() => navigate('/history')}>
           <X size={24} />
         </button>
-        <div style={{ fontSize: 16, fontWeight: 600 }}>Add past workout</div>
+        <div style={{ fontSize: 16, fontWeight: 600 }}>{t(isEditing ? 'editTitle' : 'title')}</div>
         <div style={{ width: 40 }} />
       </div>
 
-      {!hasWorkouts ? (
+      {!hasWorkouts && !isEditing ? (
         <div className="empty-state">
-          <h3 className="empty-state-title">No workouts to log</h3>
-          <p>Create or import a workout first, then you can record past sessions here.</p>
+          <h3 className="empty-state-title">{t('emptyTitle')}</h3>
+          <p>{t('emptyText')}</p>
           <button className="btn btn-primary" onClick={() => navigate('/workouts')} style={{ marginTop: 12 }}>
-            Go to Workouts
+            {t('goToWorkouts')}
           </button>
         </div>
       ) : (
         <>
-          {/* Which workout + when */}
-          <div className="form-group">
-            <label className="form-label">Which workout did you do?</label>
-            <select
-              className="form-select"
-              value={selectedWorkoutId}
-              onChange={e => chooseWorkout(e.target.value)}
-            >
-              <option value="">Select a workout…</option>
-              {workouts.map(w => (
-                <option key={w.id} value={w.id}>{w.name}</option>
-              ))}
-            </select>
-          </div>
+          {/* Which workout + when. When editing an existing entry the workout
+              type is fixed (so its logged sets aren't wiped); show it as a
+              read-only label instead of the picker. */}
+          {isEditing ? (
+            <div className="form-group">
+              <label className="form-label">{t('workoutLabel')}</label>
+              <div style={{ fontWeight: 600, padding: '4px 0' }}>
+                {translateTemplateName(lang, editLog?.workoutName ?? '')}
+              </div>
+            </div>
+          ) : (
+            <div className="form-group">
+              <label className="form-label">{t('whichWorkout')}</label>
+              <select
+                className="form-select"
+                value={selectedWorkoutId}
+                onChange={e => chooseWorkout(e.target.value)}
+              >
+                <option value="">{t('selectWorkout')}</option>
+                {workouts.map(w => (
+                  <option key={w.id} value={w.id}>{translateTemplateName(lang, w.name)}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {selectedWorkoutId && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="form-group">
-                  <label className="form-label">Date</label>
+                  <label className="form-label">{t('date')}</label>
                   <input
                     type="date"
                     className="form-input"
@@ -203,11 +248,11 @@ export default function LogPastWorkout() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Duration (min, optional)</label>
+                  <label className="form-label">{t('duration')}</label>
                   <input
                     type="number"
                     className="form-input"
-                    placeholder="e.g. 45"
+                    placeholder={t('durationPlaceholder')}
                     value={durationMin}
                     min={0}
                     onChange={e => setDurationMin(e.target.value)}
@@ -217,8 +262,7 @@ export default function LogPastWorkout() {
 
               {/* Exercises */}
               <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: '4px 0 12px' }}>
-                Adjust the weights and reps to match what you actually did. Tap
-                "Skip" on anything you didn't do.
+                {t('adjustHint')}
               </p>
 
               <div style={{ display: 'grid', gap: 12 }}>
@@ -229,14 +273,14 @@ export default function LogPastWorkout() {
                     <div key={exIndex} className="card" style={{ opacity: isSkipped ? 0.5 : 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isSkipped ? 0 : 12 }}>
                         <div style={{ fontWeight: 600, textDecoration: isSkipped ? 'line-through' : 'none' }}>
-                          {log.exerciseName}
+                          {translateExercise(lang, log.exerciseName)}
                         </div>
                         <button
                           className="btn btn-ghost btn-sm"
                           onClick={() => toggleSkip(exIndex)}
                           style={{ color: isSkipped ? 'var(--color-primary, #16C79A)' : '#9ca3af' }}
                         >
-                          {isSkipped ? 'Undo' : 'Skip'}
+                          {isSkipped ? t('undo') : t('skip')}
                         </button>
                       </div>
 
@@ -258,7 +302,7 @@ export default function LogPastWorkout() {
 
                               {!isTimed && (
                                 <Stepper
-                                  label="KG"
+                                  label={t('weightLabel')}
                                   value={set.weight}
                                   onMinus={() => adjustWeight(exIndex, setIndex, -2.5)}
                                   onPlus={() => adjustWeight(exIndex, setIndex, 2.5)}
@@ -268,7 +312,7 @@ export default function LogPastWorkout() {
                               )}
 
                               <Stepper
-                                label={isTimed ? 'SEC' : 'REPS'}
+                                label={isTimed ? t('timeLabel') : t('repsLabel')}
                                 value={set.reps}
                                 onMinus={() => adjustReps(exIndex, setIndex, -1)}
                                 onPlus={() => adjustReps(exIndex, setIndex, 1)}
@@ -291,12 +335,12 @@ export default function LogPastWorkout() {
                             onClick={() => addSet(exIndex)}
                             style={{ marginTop: 2 }}
                           >
-                            <Plus size={16} /> Add set
+                            <Plus size={16} /> {t('addSet')}
                           </button>
 
                           {isTimed && (
                             <div style={{ fontSize: 11, color: '#9ca3af' }}>
-                              Recorded as {formatCount(log.sets[0]?.reps ?? 0, true)} per set
+                              {t('recordedAs', { v: formatCount(log.sets[0]?.reps ?? 0, true, lang) })}
                             </div>
                           )}
                         </div>
@@ -308,12 +352,12 @@ export default function LogPastWorkout() {
 
               {/* Note */}
               <div className="form-group" style={{ marginTop: 16 }}>
-                <label className="form-label">Note (optional)</label>
+                <label className="form-label">{t('note')}</label>
                 <textarea
                   className="form-input"
                   value={note}
                   onChange={e => setNote(e.target.value)}
-                  placeholder="e.g. 'Felt good', 'Skipped cool-down'"
+                  placeholder={t('notePlaceholder')}
                   style={{ minHeight: 70, resize: 'vertical', fontFamily: 'inherit' }}
                 />
               </div>
@@ -323,7 +367,7 @@ export default function LogPastWorkout() {
                 onClick={handleSave}
                 style={{ padding: 16, fontSize: 16, fontWeight: 600, marginTop: 8 }}
               >
-                <Check size={18} /> Save to history
+                <Check size={18} /> {t(isEditing ? 'saveChanges' : 'saveToHistory')}
               </button>
             </>
           )}

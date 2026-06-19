@@ -6,6 +6,10 @@ import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/stora
 import PageHero from '../components/PageHero';
 import { computeSessionStats, effortDistribution, downloadProgressCsv, downloadProgressXlsx } from '../utils/progressStats';
 import { OverallProgressChart, EffortPie, VolumeChart, RepsChart } from '../components/ProgressCharts';
+import { useT, useLang } from '../i18n/context';
+import type { Lang } from '../i18n/context';
+import { progressStrings } from '../i18n/strings/progress';
+import { translateExercise, localeFor } from '../i18n/data';
 
 type Metric = 'weight' | 'reps' | 'time';
 
@@ -26,6 +30,8 @@ function weekStartTime(d: Date): number {
 }
 
 export default function Progress() {
+  const t = useT(progressStrings);
+  const { lang } = useLang();
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
@@ -86,7 +92,7 @@ export default function Progress() {
         }
         raw[ex.exerciseId].name = ex.exerciseName;
         raw[ex.exerciseId].entries.push({
-          date: new Date(log.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+          date: new Date(log.date).toLocaleDateString(localeFor(lang), { day: 'numeric', month: 'short' }),
           maxWeight,
           maxReps,
         });
@@ -108,21 +114,21 @@ export default function Progress() {
     list.sort((a, b) => b.data.length - a.data.length);
     setExerciseProgress(list);
     if (list.length > 0) setSelectedId(list[0].id);
-  }, []);
+  }, [lang]);
 
   const selectedData = exerciseProgress.find(e => e.id === selectedId);
 
   function formatBest(p: ExerciseProgress): string {
-    if (p.metric === 'time') return formatCount(p.best, true);
+    if (p.metric === 'time') return formatCount(p.best, true, lang);
     if (p.metric === 'weight') return `${p.best} kg`;
-    return `${p.best} reps`;
+    return `${p.best} ${t('unitReps')}`;
   }
 
   function chartTooltip(value: number): [string, string] {
     if (!selectedData) return [`${value}`, ''];
-    if (selectedData.metric === 'time') return [formatCount(value, true), 'Best'];
-    if (selectedData.metric === 'weight') return [`${value} kg`, 'Weight'];
-    return [`${value} reps`, 'Reps'];
+    if (selectedData.metric === 'time') return [formatCount(value, true, lang), t('best')];
+    if (selectedData.metric === 'weight') return [`${value} kg`, t('weight')];
+    return [`${value} ${t('unitReps')}`, t('reps')];
   }
 
   const weekDelta = weeklyStats.thisWeek - weeklyStats.lastWeek;
@@ -137,12 +143,16 @@ export default function Progress() {
       <PageHero
         eyebrow={
           weeklyStats.lastWeek > 0
-            ? `${weekDelta > 0 ? '↑' : weekDelta < 0 ? '↓' : '='} ${weekDelta === 0 ? 'same as' : `${Math.abs(weekDelta)} vs`} last week`
-            : 'Your improvement over time'
+            ? weekDelta === 0
+              ? t('eyebrowSame')
+              : weekDelta > 0
+                ? t('eyebrowUp', { n: Math.abs(weekDelta) })
+                : t('eyebrowDown', { n: Math.abs(weekDelta) })
+            : t('eyebrowDefault')
         }
-        title="Progress"
+        title={t('title')}
         stats={[
-          { value: weeklyStats.thisWeek, label: 'this week' },
+          { value: weeklyStats.thisWeek, label: t('statThisWeek') },
           {
             value: (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -150,10 +160,10 @@ export default function Progress() {
                 {streak}
               </span>
             ),
-            label: streak === 1 ? 'week streak' : 'weeks streak',
+            label: streak === 1 ? t('statWeekStreak') : t('statWeeksStreak'),
           },
-          { value: weeklyStats.total, label: 'total workouts' },
-          { value: totalVolume.toLocaleString('en-GB'), label: 'total volume (kg)' },
+          { value: weeklyStats.total, label: t('statTotalWorkouts') },
+          { value: totalVolume.toLocaleString(localeFor(lang)), label: t('statTotalVolume') },
         ]}
       />
 
@@ -161,22 +171,22 @@ export default function Progress() {
       {logs.length === 0 ? (
         <div className="empty-state">
           <TrendingUp size={64} />
-          <h3 className="empty-state-title">No data yet</h3>
-          <p>Complete some workouts to see your progress.</p>
+          <h3 className="empty-state-title">{t('emptyTitle')}</h3>
+          <p>{t('emptyText')}</p>
         </div>
       ) : (
         <>
           {/* Export buttons */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
             <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => downloadProgressCsv(sessionStats)}>
-              <Download size={18} /> CSV
+              <Download size={18} /> {t('exportCsv')}
             </button>
             <button
               className="btn btn-secondary"
               style={{ flex: 1 }}
-              onClick={() => downloadProgressXlsx(sessionStats).catch(() => alert('Sorry, the Excel file could not be created.'))}
+              onClick={() => downloadProgressXlsx(sessionStats).catch(() => alert(t('excelError')))}
             >
-              <FileSpreadsheet size={18} /> Excel
+              <FileSpreadsheet size={18} /> {t('exportExcel')}
             </button>
           </div>
 
@@ -191,14 +201,14 @@ export default function Progress() {
           <RepsChart stats={sessionStats} />
 
           {/* Workout calendar */}
-          <WorkoutCalendar logs={logs} />
+          <WorkoutCalendar logs={logs} t={t} lang={lang} />
 
           {/* Progress Chart */}
           {exerciseProgress.length > 0 && (
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <TrendingUp size={18} />
-                <h3 style={{ fontSize: 16, fontWeight: 600 }}>Progress</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 600 }}>{t('sectionProgress')}</h3>
               </div>
 
               <select
@@ -208,7 +218,7 @@ export default function Progress() {
                 style={{ marginBottom: 16 }}
               >
                 {exerciseProgress.map(ex => (
-                  <option key={ex.id} value={ex.id}>{ex.name}</option>
+                  <option key={ex.id} value={ex.id}>{translateExercise(lang, ex.name)}</option>
                 ))}
               </select>
 
@@ -232,7 +242,7 @@ export default function Progress() {
                 </div>
               ) : (
                 <div style={{ background: '#f3f4f6', borderRadius: 12, padding: 24, textAlign: 'center', color: '#6b7280' }}>
-                  Need at least 2 workouts with this exercise to show chart
+                  {t('needTwoWorkouts')}
                 </div>
               )}
             </div>
@@ -243,7 +253,7 @@ export default function Progress() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <Trophy size={18} style={{ color: '#f59e0b' }} />
-                <h3 style={{ fontSize: 16, fontWeight: 600 }}>Personal Records</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 600 }}>{t('personalRecords')}</h3>
               </div>
 
               <div className="list">
@@ -262,9 +272,9 @@ export default function Progress() {
                         <Trophy size={15} style={{ color: '#f59e0b' }} />
                       </div>
                       <div>
-                        <div style={{ fontWeight: 500 }}>{record.name}</div>
+                        <div style={{ fontWeight: 500 }}>{translateExercise(lang, record.name)}</div>
                         <div style={{ fontSize: 13, color: '#6b7280' }}>
-                          Best: {formatBest(record)}
+                          {t('bestLabel', { v: formatBest(record) })}
                         </div>
                       </div>
                     </div>
@@ -290,9 +300,19 @@ function dayKey(d: Date): string {
   ).padStart(2, '0')}`;
 }
 
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAY_KEYS = [
+  'weekdayMon',
+  'weekdayTue',
+  'weekdayWed',
+  'weekdayThu',
+  'weekdayFri',
+  'weekdaySat',
+  'weekdaySun',
+];
 
-function WorkoutCalendar({ logs }: { logs: WorkoutLog[] }) {
+type TFn = (key: string, vars?: Record<string, string | number>) => string;
+
+function WorkoutCalendar({ logs, t, lang }: { logs: WorkoutLog[]; t: TFn; lang: Lang }) {
   // How many workouts happened on each day.
   const countByDay = useMemo(() => {
     const map: Record<string, number> = {};
@@ -307,7 +327,7 @@ function WorkoutCalendar({ logs }: { logs: WorkoutLog[] }) {
   const todayKey = dayKey(today);
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() });
 
-  const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString(undefined, {
+  const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString(localeFor(lang), {
     month: 'long',
     year: 'numeric',
   });
@@ -344,33 +364,35 @@ function WorkoutCalendar({ logs }: { logs: WorkoutLog[] }) {
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <CalendarDays size={18} />
-        <h3 style={{ fontSize: 16, fontWeight: 600 }}>Workout calendar</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600 }}>{t('workoutCalendar')}</h3>
       </div>
 
       <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' }}>
         {/* Month navigation */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <button className="btn btn-ghost" onClick={() => step(-1)} aria-label="Previous month" style={{ padding: 6 }}>
+          <button className="btn btn-ghost" onClick={() => step(-1)} aria-label={t('previousMonth')} style={{ padding: 6 }}>
             <ChevronLeft size={20} />
           </button>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontWeight: 600 }}>{monthLabel}</div>
             <div style={{ fontSize: 12, color: '#6b7280' }}>
               {monthWorkouts === 0
-                ? 'No workouts'
-                : `${monthWorkouts} workout${monthWorkouts === 1 ? '' : 's'}`}
+                ? t('noWorkouts')
+                : monthWorkouts === 1
+                  ? t('workoutCount', { n: monthWorkouts })
+                  : t('workoutCountPlural', { n: monthWorkouts })}
             </div>
           </div>
-          <button className="btn btn-ghost" onClick={() => step(1)} aria-label="Next month" style={{ padding: 6 }}>
+          <button className="btn btn-ghost" onClick={() => step(1)} aria-label={t('nextMonth')} style={{ padding: 6 }}>
             <ChevronRight size={20} />
           </button>
         </div>
 
         {/* Weekday header */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
-          {WEEKDAY_LABELS.map((w) => (
+          {WEEKDAY_KEYS.map((w) => (
             <div key={w} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#9ca3af' }}>
-              {w}
+              {t(w)}
             </div>
           ))}
         </div>
@@ -385,7 +407,7 @@ function WorkoutCalendar({ logs }: { logs: WorkoutLog[] }) {
             return (
               <div
                 key={k}
-                title={did ? `${countByDay[k]} workout${countByDay[k] === 1 ? '' : 's'}` : undefined}
+                title={did ? (countByDay[k] === 1 ? t('workoutCount', { n: countByDay[k] }) : t('workoutCountPlural', { n: countByDay[k] })) : undefined}
                 style={{
                   aspectRatio: '1 / 1',
                   display: 'flex',

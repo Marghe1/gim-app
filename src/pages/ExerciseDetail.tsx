@@ -4,10 +4,15 @@ import { ChevronLeft, TrendingUp, Target, Zap, Youtube } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Exercise, ExerciseHistoryEntry } from '../utils/storage';
 import { getExercises, saveExercise, getExerciseHistory, getAverageEffort, getLastWeightForExercise, formatCount, getExerciseVideoUrl } from '../utils/storage';
+import { useT, useLang } from '../i18n/context';
+import { exerciseDetailStrings } from '../i18n/strings/exerciseDetail';
+import { translateExercise, translateMuscle, localeFor } from '../i18n/data';
 
 export default function ExerciseDetail() {
   const { exerciseId } = useParams();
   const navigate = useNavigate();
+  const t = useT(exerciseDetailStrings);
+  const { lang } = useLang();
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
@@ -57,9 +62,9 @@ export default function ExerciseDetail() {
     return (
       <div className="page">
         <div className="empty-state">
-          <p>Exercise not found</p>
+          <p>{t('exerciseNotFound')}</p>
           <button className="btn btn-primary" onClick={() => navigate('/exercises')}>
-            Back to Exercises
+            {t('backToExercises')}
           </button>
         </div>
       </div>
@@ -68,7 +73,7 @@ export default function ExerciseDetail() {
 
   // Format history for chart
   const chartData = history.map(h => ({
-    date: new Date(h.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+    date: new Date(h.date).toLocaleDateString(localeFor(lang), { day: 'numeric', month: 'short' }),
     weight: h.weight,
     reps: h.reps,
   }));
@@ -88,15 +93,15 @@ export default function ExerciseDetail() {
           <ChevronLeft size={24} />
         </button>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{exercise.name}</h1>
-          <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>{exercise.muscleGroup}</p>
+          <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{translateExercise(lang, exercise.name)}</h1>
+          <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>{translateMuscle(lang, exercise.muscleGroup)}</p>
         </div>
         <button
           className="btn btn-secondary btn-sm"
           onClick={() => window.open(getExerciseVideoUrl(exercise), '_blank', 'noopener')}
           style={{ display: 'flex', alignItems: 'center', gap: 6 }}
         >
-          <Youtube size={18} style={{ color: '#ef4444' }} /> How to
+          <Youtube size={18} style={{ color: '#ef4444' }} /> {t('howTo')}
         </button>
       </div>
 
@@ -104,11 +109,11 @@ export default function ExerciseDetail() {
       <div className="stats-grid" style={{ marginBottom: 24 }}>
         <div className="stat-card">
           <div className="stat-value">{bestWeight > 0 ? `${bestWeight}kg` : '-'}</div>
-          <div className="stat-label">Best Weight</div>
+          <div className="stat-label">{t('bestWeight')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{totalSessions}</div>
-          <div className="stat-label">Sessions</div>
+          <div className="stat-label">{t('sessions')}</div>
         </div>
       </div>
 
@@ -117,7 +122,7 @@ export default function ExerciseDetail() {
         <div style={{ background: '#f3f4f6', borderRadius: 12, padding: 16, marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <Zap size={18} style={{ color: '#f59e0b' }} />
-            <span style={{ fontWeight: 500 }}>Average Effort</span>
+            <span style={{ fontWeight: 500 }}>{t('averageEffort')}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {[1, 2, 3, 4, 5].map(star => (
@@ -143,7 +148,7 @@ export default function ExerciseDetail() {
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <TrendingUp size={18} />
-            <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Weight Progress</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{t('weightProgress')}</h3>
           </div>
           <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' }}>
             <ResponsiveContainer width="100%" height={200}>
@@ -153,8 +158,8 @@ export default function ExerciseDetail() {
                 <YAxis tick={{ fontSize: 12 }} unit="kg" />
                 <Tooltip
                   formatter={(value, name) => [
-                    name === 'weight' ? `${value} kg` : `${value} reps`,
-                    name === 'weight' ? 'Weight' : 'Reps'
+                    name === 'weight' ? `${value} kg` : formatCount(Number(value), false, lang),
+                    name === 'weight' ? t('chartWeight') : t('chartReps')
                   ]}
                   contentStyle={{ borderRadius: 8 }}
                 />
@@ -179,7 +184,7 @@ export default function ExerciseDetail() {
           color: '#6b7280'
         }}>
           <TrendingUp size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
-          <p style={{ margin: 0 }}>Complete 2+ sessions to see progress chart</p>
+          <p style={{ margin: 0 }}>{t('needMoreSessions')}</p>
         </div>
       ) : null}
 
@@ -187,7 +192,7 @@ export default function ExerciseDetail() {
       <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <Target size={18} />
-          <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Settings</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{t('settings')}</h3>
         </div>
 
         {/* Time-based toggle */}
@@ -201,10 +206,10 @@ export default function ExerciseDetail() {
               onChange={e => setIsTimed(e.target.checked)}
               style={{ width: 18, height: 18 }}
             />
-            <span className="form-label" style={{ margin: 0 }}>Time-based exercise (measured in seconds)</span>
+            <span className="form-label" style={{ margin: 0 }}>{t('timeBasedLabel')}</span>
           </label>
           <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-            Turn on for holds, planks or balance exercises. Shows seconds instead of reps.
+            {t('timeBasedHint')}
           </p>
         </div>
 
@@ -213,12 +218,12 @@ export default function ExerciseDetail() {
           <>
             {lastWeight !== null && (
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: 12, marginBottom: 16 }}>
-                <span style={{ color: '#166534' }}>Last used: <strong>{lastWeight}kg</strong></span>
+                <span style={{ color: '#166534' }}>{t('lastUsed')} <strong>{lastWeight}kg</strong></span>
               </div>
             )}
 
             <div className="form-group">
-              <label className="form-label">Default Starting Weight (kg)</label>
+              <label className="form-label">{t('defaultWeightLabel')}</label>
               <input
                 type="number"
                 className="form-input"
@@ -229,12 +234,12 @@ export default function ExerciseDetail() {
                 step={0.5}
               />
               <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                Used when no previous history exists
+                {t('defaultWeightHint')}
               </p>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Weight Increment (kg)</label>
+              <label className="form-label">{t('weightIncrementLabel')}</label>
               <input
                 type="number"
                 className="form-input"
@@ -245,14 +250,14 @@ export default function ExerciseDetail() {
                 step={0.5}
               />
               <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                How much to increase when progressing
+                {t('weightIncrementHint')}
               </p>
             </div>
           </>
         )}
 
         <div className="form-group">
-          <label className="form-label">Video URL (optional)</label>
+          <label className="form-label">{t('videoUrlLabel')}</label>
           <input
             type="url"
             className="form-input"
@@ -261,28 +266,28 @@ export default function ExerciseDetail() {
             placeholder="https://youtube.com/..."
           />
           <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-            Leave empty to auto-search YouTube by exercise name
+            {t('videoUrlHint')}
           </p>
         </div>
 
         <button className="btn btn-primary btn-block" onClick={handleSave}>
-          Save Settings
+          {t('saveSettings')}
         </button>
       </div>
 
       {/* Recent History */}
       {history.length > 0 && (
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Recent Sessions</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{t('recentSessions')}</h3>
           <div className="list">
             {history.slice(-5).reverse().map((entry, idx) => (
               <div key={idx} className="list-item">
                 <div className="list-item-content">
                   <div className="list-item-title">
-                    {isTimed ? formatCount(entry.reps, true) : `${entry.weight}kg × ${entry.reps} reps`}
+                    {isTimed ? formatCount(entry.reps, true, lang) : `${entry.weight}kg × ${formatCount(entry.reps, false, lang)}`}
                   </div>
                   <div className="list-item-subtitle">
-                    {new Date(entry.date).toLocaleDateString('en-GB', {
+                    {new Date(entry.date).toLocaleDateString(localeFor(lang), {
                       weekday: 'short',
                       day: 'numeric',
                       month: 'short',

@@ -41,6 +41,7 @@ function App() {
         </Route>
         <Route path="/workout/:workoutId" element={<ActiveWorkout />} />
         <Route path="/log-past" element={<LogPastWorkout />} />
+        <Route path="/log-past/:logId" element={<LogPastWorkout />} />
       </Routes>
     </BrowserRouter>
   );

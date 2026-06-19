@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Timer as TimerIcon, Play, Pause, RotateCcw, X, Plus, Minus } from 'lucide-react';
+import { useT } from '../i18n/context';
+import { floatingTimerStrings } from '../i18n/strings/floatingTimer';
 
 // Quick-pick durations (in seconds) shown as preset chips
 const PRESETS = [
@@ -23,6 +25,7 @@ function formatTime(totalSeconds: number) {
  * Mounted once at the app level so it keeps running while you navigate.
  */
 export default function FloatingTimer() {
+  const t = useT(floatingTimerStrings);
   const [open, setOpen] = useState(false);
   const [duration, setDuration] = useState(60); // the time it was last set to
   const [remaining, setRemaining] = useState(60);
@@ -100,7 +103,7 @@ export default function FloatingTimer() {
     return (
       <button
         onClick={() => setOpen(true)}
-        aria-label="Open timer"
+        aria-label={t('openTimer')}
         style={{
           position: 'fixed',
           right: 16,
@@ -147,12 +150,12 @@ export default function FloatingTimer() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
           <TimerIcon size={18} style={{ color: 'var(--primary)' }} />
-          Timer
+          {t('timer')}
         </div>
         <button
           className="btn btn-ghost"
           onClick={() => setOpen(false)}
-          aria-label="Close timer"
+          aria-label={t('closeTimer')}
           style={{ padding: 4 }}
         >
           <X size={20} />
@@ -174,7 +177,7 @@ export default function FloatingTimer() {
         </div>
         {finished && (
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)', marginTop: 2 }}>
-            Time's up!
+            {t('timesUp')}
           </div>
         )}
       </div>
@@ -228,11 +231,11 @@ export default function FloatingTimer() {
       <div style={{ display: 'flex', gap: 8 }}>
         {!running ? (
           <button className="btn btn-primary" style={{ flex: 1 }} onClick={start} disabled={remaining <= 0}>
-            <Play size={18} /> Start
+            <Play size={18} /> {t('start')}
           </button>
         ) : (
           <button className="btn btn-secondary" style={{ flex: 1 }} onClick={pause}>
-            <Pause size={18} /> Pause
+            <Pause size={18} /> {t('pause')}
           </button>
         )}
         <button className="btn btn-secondary" onClick={reset}>

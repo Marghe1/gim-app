@@ -18,6 +18,19 @@ import { Info } from 'lucide-react';
 import type { SessionStat, EffortSlice } from '../utils/progressStats';
 import { EFFORT_META } from '../utils/progressStats';
 import { formatDuration } from '../utils/storage';
+import { useT, useLang } from '../i18n/context';
+import { progressChartsStrings } from '../i18n/strings/progressCharts';
+import { localeFor } from '../i18n/data';
+
+// Map the English effort label (from EFFORT_META) to a translation key so the
+// pie legend/tooltip can show the level name in the chosen language.
+const EFFORT_LABEL_KEY: Record<string, string> = {
+  'Very easy': 'effortVeryEasy',
+  Easy: 'effortEasy',
+  Moderate: 'effortModerate',
+  Hard: 'effortHard',
+  Maximum: 'effortMaximum',
+};
 
 const MINT = '#16c79a';
 const CORAL = '#ff8a80';
@@ -64,14 +77,16 @@ function effortFor(avg: number | null) {
 
 /** The headline chart: 0–100 overall score per session (bars) + trend line. Clickable. */
 export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
+  const t = useT(progressChartsStrings);
+  const { lang } = useLang();
   const { data, truncated } = recent(stats);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = stats.find(s => s.id === selectedId) ?? null;
 
   return (
     <ChartCard
-      title="Overall progress"
-      subtitle="A 0–100 score per workout blending weight, reps and effort vs your best. Tap a bar for details."
+      title={t('overallProgressTitle')}
+      subtitle={t('overallProgressSubtitle')}
     >
       <ResponsiveContainer width="100%" height={220}>
         <ComposedChart
@@ -87,7 +102,7 @@ export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
           <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} width={34} />
           <Tooltip
             contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
-            formatter={(value: any, name: any) => [value, name === 'score' ? 'Score' : 'Trend']}
+            formatter={(value: any, name: any) => [value, name === 'score' ? t('legendScore') : t('legendTrend')]}
             labelFormatter={(l: any) => l}
           />
           <Bar dataKey="score" radius={[6, 6, 0, 0]} cursor="pointer" maxBarSize={42}>
@@ -102,7 +117,7 @@ export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
 
       {truncated > 0 && (
         <p style={{ fontSize: 11, color: 'var(--gray-400)', textAlign: 'center', marginTop: 4 }}>
-          Showing your last {MAX_POINTS} workouts ({truncated} earlier not shown)
+          {t('showingLastWorkouts', { max: MAX_POINTS, truncated })}
         </p>
       )}
 
@@ -119,18 +134,18 @@ export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <strong>{selected.workoutName}</strong>
             <span style={{ fontSize: 13, color: 'var(--gray-500)' }}>
-              {new Date(selected.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {new Date(selected.date).toLocaleDateString(localeFor(lang), { day: 'numeric', month: 'short', year: 'numeric' })}
             </span>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 13 }}>
-            <Pill label="Score" value={`${selected.score}${selected.isBest ? ' 🔥' : ''}`} />
-            <Pill label="Weight" value={`${selected.volume.toLocaleString('en-GB')} kg`} />
-            <Pill label="Reps" value={`${selected.reps}`} />
-            {selected.timeSec > 0 && <Pill label="Hold" value={`${selected.timeSec}s`} />}
+            <Pill label={t('detailScore')} value={`${selected.score}${selected.isBest ? ' 🔥' : ''}`} />
+            <Pill label={t('detailWeight')} value={`${selected.volume.toLocaleString(localeFor(lang))} kg`} />
+            <Pill label={t('detailReps')} value={`${selected.reps}`} />
+            {selected.timeSec > 0 && <Pill label={t('detailHold')} value={`${selected.timeSec}s`} />}
             {selected.avgEffort !== null && (
-              <Pill label="Effort" value={`${effortFor(selected.avgEffort)?.emoji ?? ''} ${selected.avgEffort.toFixed(1)}`} />
+              <Pill label={t('detailEffort')} value={`${effortFor(selected.avgEffort)?.emoji ?? ''} ${selected.avgEffort.toFixed(1)}`} />
             )}
-            <Pill label="Time" value={formatDuration(selected.durationSec)} />
+            <Pill label={t('detailTime')} value={formatDuration(selected.durationSec)} />
           </div>
         </div>
       )}
@@ -159,19 +174,26 @@ const RADIAN = Math.PI / 180;
 
 /** Effort distribution pie with emoji slice labels + a legend. */
 export function EffortPie({ slices }: { slices: EffortSlice[] }) {
+  const t = useT(progressChartsStrings);
   const total = slices.reduce((a, s) => a + s.count, 0);
   if (total === 0) return null;
 
+  // EFFORT_META labels are stored in English; show the localized name.
+  const labelFor = (label: string) => {
+    const key = EFFORT_LABEL_KEY[label];
+    return key ? t(key) : label;
+  };
+
   return (
-    <ChartCard title="How hard your workouts felt" subtitle="Effort you logged after each exercise.">
+    <ChartCard title={t('effortPieTitle')} subtitle={t('effortPieSubtitle')}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <ResponsiveContainer width="100%" height={200} minWidth={200}>
           <PieChart>
             <Tooltip
               contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
               formatter={(value: any, _n: any, item: any) => [
-                `${value} time${value === 1 ? '' : 's'}`,
-                `${item?.payload?.emoji ?? ''} ${item?.payload?.label ?? ''}`,
+                value === 1 ? t('tooltipTimesOne', { n: value }) : t('tooltipTimesMany', { n: value }),
+                `${item?.payload?.emoji ?? ''} ${labelFor(item?.payload?.label ?? '')}`,
               ]}
             />
             <Pie
@@ -206,7 +228,7 @@ export function EffortPie({ slices }: { slices: EffortSlice[] }) {
         {slices.map(s => (
           <span key={s.value} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
             <span style={{ width: 12, height: 12, borderRadius: 4, background: s.color, display: 'inline-block' }} />
-            {s.emoji} {s.label}
+            {s.emoji} {labelFor(s.label)}
             <strong>{Math.round((s.count / total) * 100)}%</strong>
           </span>
         ))}
@@ -221,11 +243,15 @@ function TimeSeriesBars({
   dataKey,
   color,
   unit,
+  label,
+  locale,
 }: {
   stats: SessionStat[];
   dataKey: 'volume' | 'reps';
   color: string;
   unit: string;
+  label: string;
+  locale: string;
 }) {
   const { data } = recent(stats);
   return (
@@ -236,7 +262,7 @@ function TimeSeriesBars({
         <YAxis tick={{ fontSize: 11 }} width={38} />
         <Tooltip
           contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
-          formatter={(value: any) => [`${Number(value).toLocaleString('en-GB')} ${unit}`, dataKey === 'volume' ? 'Weight' : 'Reps']}
+          formatter={(value: any) => [`${Number(value).toLocaleString(locale)} ${unit}`, label]}
         />
         <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]} maxBarSize={42}>
           <LabelList dataKey={dataKey} position="top" style={{ fontSize: 10, fontWeight: 700, fill: 'var(--gray-500)' }} />
@@ -247,21 +273,25 @@ function TimeSeriesBars({
 }
 
 export function VolumeChart({ stats }: { stats: SessionStat[] }) {
+  const t = useT(progressChartsStrings);
+  const { lang } = useLang();
   const hasVolume = stats.some(s => s.volume > 0);
   if (!hasVolume) return null;
   return (
-    <ChartCard title="Weight lifted each workout" subtitle="Total kilograms moved (weight × reps).">
-      <TimeSeriesBars stats={stats} dataKey="volume" color={MINT} unit="kg" />
+    <ChartCard title={t('volumeTitle')} subtitle={t('volumeSubtitle')}>
+      <TimeSeriesBars stats={stats} dataKey="volume" color={MINT} unit="kg" label={t('legendWeight')} locale={localeFor(lang)} />
     </ChartCard>
   );
 }
 
 export function RepsChart({ stats }: { stats: SessionStat[] }) {
+  const t = useT(progressChartsStrings);
+  const { lang } = useLang();
   const hasReps = stats.some(s => s.reps > 0);
   if (!hasReps) return null;
   return (
-    <ChartCard title="Repetitions each workout" subtitle="Total reps across all exercises.">
-      <TimeSeriesBars stats={stats} dataKey="reps" color={SKY} unit="reps" />
+    <ChartCard title={t('repsTitle')} subtitle={t('repsSubtitle')}>
+      <TimeSeriesBars stats={stats} dataKey="reps" color={SKY} unit={t('unitReps')} label={t('legendReps')} locale={localeFor(lang)} />
     </ChartCard>
   );
 }

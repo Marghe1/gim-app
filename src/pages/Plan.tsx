@@ -4,18 +4,29 @@ import { CalendarDays, ChevronLeft, ChevronRight, Play, X, Wand2, Trash2 } from 
 import type { Workout, WorkoutSchedule } from '../utils/storage';
 import { getWorkouts, getSchedule, saveSchedule, localDateKey } from '../utils/storage';
 import PageHero from '../components/PageHero';
-
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const MONTH_LABELS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+import { useT, useLang } from '../i18n/context';
+import { planStrings } from '../i18n/strings/plan';
+import { localeFor, translateTemplateName } from '../i18n/data';
 
 // Auto-plan targets: Tuesday (2) and Thursday (4) — getDay() numbering.
 const AUTO_PLAN_DAYS = [2, 4];
 
 export default function Plan() {
   const navigate = useNavigate();
+  const t = useT(planStrings);
+  const { lang } = useLang();
+  const locale = localeFor(lang);
+
+  // Localized Monday-start weekday short labels (Mon…Sun) for the calendar header.
+  const weekdayLabels = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    // 2024-01-01 is a Monday; build 7 consecutive days from it.
+    return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 1 + i)));
+  }, [locale]);
+
+  // Localized full month name for the viewed month.
+  const monthLabel = (year: number, month: number) =>
+    new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(year, month, 1));
   const today = new Date();
   const todayKey = localDateKey(today);
 
@@ -68,10 +79,10 @@ export default function Plan() {
   // saved workouts so each day starts with a suggestion the user can change.
   function autoPlan() {
     if (workouts.length === 0) {
-      alert('Add a workout first (in the Workouts tab), then come back to plan your week.');
+      alert(t('addWorkoutFirst'));
       return;
     }
-    if (!confirm('Plan a session every Tuesday and Thursday this month? Days already planned this month will be overwritten.')) {
+    if (!confirm(t('confirmAutoPlan'))) {
       return;
     }
     const next = { ...schedule };
@@ -89,7 +100,7 @@ export default function Plan() {
 
   function clearMonth() {
     if (monthPlan.length === 0) return;
-    if (!confirm('Remove all planned sessions in this month?')) return;
+    if (!confirm(t('confirmClearMonth'))) return;
     const next = { ...schedule };
     Object.keys(next).forEach(k => { if (k.startsWith(monthPrefix)) delete next[k]; });
     persist(next);
@@ -109,19 +120,22 @@ export default function Plan() {
 
   function formatDayLabel(dateKey: string): string {
     const d = new Date(`${dateKey}T00:00:00`);
-    return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    return d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
   }
+
+  // Built-in template names are translated; user-typed names show as-is.
+  const workoutLabel = (w: Workout) => translateTemplateName(lang, w.name);
 
   const upcomingCount = Object.keys(schedule).filter(k => k >= todayKey).length;
 
   return (
     <div className="home">
       <PageHero
-        eyebrow="Schedule your sessions ahead"
-        title="Plan"
+        eyebrow={t('heroEyebrow')}
+        title={t('title')}
         stats={[
-          { value: upcomingCount, label: 'upcoming sessions' },
-          { value: workouts.length, label: workouts.length === 1 ? 'workout saved' : 'workouts saved' },
+          { value: upcomingCount, label: t('statUpcomingSessions') },
+          { value: workouts.length, label: workouts.length === 1 ? t('statWorkoutSaved') : t('statWorkoutsSaved') },
         ]}
       />
 
@@ -129,7 +143,7 @@ export default function Plan() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <button className="btn btn-primary" style={{ flex: 1 }} onClick={autoPlan}>
           <Wand2 size={18} />
-          Plan Tue &amp; Thu
+          {t('planTueThu')}
         </button>
         <button
           className="btn btn-secondary"
@@ -138,7 +152,7 @@ export default function Plan() {
           disabled={monthPlan.length === 0}
         >
           <Trash2 size={18} />
-          Clear month
+          {t('clearMonth')}
         </button>
       </div>
 
@@ -148,7 +162,7 @@ export default function Plan() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <CalendarDays size={18} />
             <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>
-              {MONTH_LABELS[view.month]} {view.year}
+              {monthLabel(view.year, view.month)} {view.year}
             </h3>
           </div>
           <div style={{ display: 'flex', gap: 4 }}>
@@ -163,7 +177,7 @@ export default function Plan() {
 
         {/* Weekday header */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
-          {WEEKDAY_LABELS.map(w => (
+          {weekdayLabels.map(w => (
             <div key={w} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary, #6b7280)' }}>
               {w}
             </div>
@@ -182,7 +196,7 @@ export default function Plan() {
               <button
                 key={k}
                 onClick={() => setPickerDate(k)}
-                title={w ? w.name : planned ? 'Planned (workout removed)' : 'Tap to plan'}
+                title={w ? workoutLabel(w) : planned ? t('tooltipPlanned') : t('tooltipTapToPlan')}
                 style={{
                   aspectRatio: '1 / 1',
                   borderRadius: 8,
@@ -201,7 +215,7 @@ export default function Plan() {
                 <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1 }}>{d.getDate()}</span>
                 {planned && (
                   <span style={{ fontSize: 8, lineHeight: 1.1, marginTop: 2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {w ? w.name : '—'}
+                    {w ? workoutLabel(w) : '—'}
                   </span>
                 )}
               </button>
@@ -212,11 +226,11 @@ export default function Plan() {
 
       {/* Planned sessions list */}
       <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
-        {MONTH_LABELS[view.month]} sessions
+        {t('monthSessions', { month: monthLabel(view.year, view.month) })}
       </h3>
       {monthPlan.length === 0 ? (
         <div className="empty-state" style={{ padding: 20 }}>
-          <p>Nothing planned yet. Tap “Plan Tue &amp; Thu” or pick a day on the calendar.</p>
+          <p>{t('emptyState')}</p>
         </div>
       ) : (
         <div className="list">
@@ -230,13 +244,13 @@ export default function Plan() {
                     {formatDayLabel(k)}
                   </div>
                   <div className="list-item-subtitle">
-                    {w ? w.name : 'Workout removed — tap the day to choose another'}
+                    {w ? workoutLabel(w) : t('workoutRemoved')}
                   </div>
                 </div>
                 <div className="list-item-actions" style={{ gap: 8 }}>
                   {w && (
                     <button className="btn btn-primary btn-sm" onClick={() => navigate(`/workout/${w.id}`)}>
-                      <Play size={16} /> Start
+                      <Play size={16} /> {t('start')}
                     </button>
                   )}
                   <button className="btn btn-ghost" onClick={() => clearDay(k)}>
@@ -257,14 +271,14 @@ export default function Plan() {
               <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>
                 {formatDayLabel(pickerDate)}
               </h3>
-              <button className="btn btn-ghost" style={{ padding: 4 }} onClick={() => setPickerDate(null)}>
+              <button className="btn btn-ghost" style={{ padding: 4 }} aria-label={t('close')} onClick={() => setPickerDate(null)}>
                 <X size={20} />
               </button>
             </div>
 
             {workouts.length === 0 ? (
               <p style={{ fontSize: 14, color: 'var(--color-text-secondary, #6b7280)' }}>
-                You have no workouts yet. Create one in the Workouts tab first.
+                {t('noWorkoutsYet')}
               </p>
             ) : (
               <div className="list" style={{ marginBottom: 12 }}>
@@ -284,9 +298,11 @@ export default function Plan() {
                       }}
                     >
                       <div className="list-item-content">
-                        <div className="list-item-title">{w.name}</div>
+                        <div className="list-item-title">{workoutLabel(w)}</div>
                         <div className="list-item-subtitle">
-                          {w.exercises.length} exercise{w.exercises.length !== 1 ? 's' : ''}
+                          {w.exercises.length !== 1
+                            ? t('exerciseCountPlural', { count: w.exercises.length })
+                            : t('exerciseCount', { count: w.exercises.length })}
                         </div>
                       </div>
                     </button>
@@ -297,7 +313,7 @@ export default function Plan() {
 
             {schedule[pickerDate] && (
               <button className="btn btn-secondary btn-block" onClick={() => clearDay(pickerDate)}>
-                <Trash2 size={16} /> Remove from this day
+                <Trash2 size={16} /> {t('removeFromDay')}
               </button>
             )}
           </div>

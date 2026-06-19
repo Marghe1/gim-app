@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Calendar, Timer, ChevronDown, ChevronUp, Trash2, MessageSquare, Plus } from 'lucide-react';
+import { Clock, Calendar, Timer, ChevronDown, ChevronUp, Trash2, MessageSquare, Plus, Pencil } from 'lucide-react';
 import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, deleteWorkoutLog, saveWorkoutLog, getTimedExerciseIds, formatCount, formatDuration } from '../utils/storage';
 import PageHero from '../components/PageHero';
+import { useT, useLang } from '../i18n/context';
+import { historyStrings } from '../i18n/strings/history';
+import { translateExercise, localeFor } from '../i18n/data';
 
 // Which note is currently being edited: a workout-level note (exIndex null) or
 // a specific exercise note (exIndex = position in the log's exercises array).
@@ -11,6 +14,8 @@ type EditTarget = { logId: string; exIndex: number | null };
 
 export default function History() {
   const navigate = useNavigate();
+  const t = useT(historyStrings);
+  const { lang } = useLang();
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
@@ -29,7 +34,7 @@ export default function History() {
   }
 
   function handleDelete(id: string) {
-    if (confirm('Delete this workout record?')) {
+    if (confirm(t('confirmDelete'))) {
       deleteWorkoutLog(id);
       loadLogs();
     }
@@ -71,11 +76,11 @@ export default function History() {
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Today';
+      return t('today');
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
+      return t('yesterday');
     }
-    return date.toLocaleDateString('en-GB', {
+    return date.toLocaleDateString(localeFor(lang), {
       weekday: 'short',
       day: 'numeric',
       month: 'short'
@@ -101,11 +106,11 @@ export default function History() {
   return (
     <div className="home">
       <PageHero
-        eyebrow="Your past workouts"
-        title="History"
+        eyebrow={t('eyebrow')}
+        title={t('title')}
         stats={[
-          { value: logs.length, label: logs.length === 1 ? 'workout logged' : 'workouts logged' },
-          { value: formatDuration(totalDuration), label: 'total time' },
+          { value: logs.length, label: logs.length === 1 ? t('statWorkoutLogged') : t('statWorkoutsLogged') },
+          { value: formatDuration(totalDuration), label: t('statTotalTime') },
         ]}
       />
 
@@ -115,14 +120,14 @@ export default function History() {
         onClick={() => navigate('/log-past')}
         style={{ marginBottom: 16 }}
       >
-        <Plus size={18} /> Add past workout
+        <Plus size={18} /> {t('addPastWorkout')}
       </button>
 
       {logs.length === 0 ? (
         <div className="empty-state">
           <Clock size={64} />
-          <h3 className="empty-state-title">No workouts yet</h3>
-          <p>Complete a workout, or add a past one above, to see it here.</p>
+          <h3 className="empty-state-title">{t('emptyTitle')}</h3>
+          <p>{t('emptyText')}</p>
         </div>
       ) : (
         <div>
@@ -146,7 +151,7 @@ export default function History() {
                           <Timer size={14} />
                           {formatDuration(log.duration)}
                         </span>
-                        <span>{log.exercises.length} exercises</span>
+                        <span>{t('exercisesCount', { n: log.exercises.length })}</span>
                         {log.notes && (
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <MessageSquare size={14} />
@@ -155,6 +160,13 @@ export default function History() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        className="btn btn-ghost"
+                        title={t('edit')}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/log-past/${log.id}`); }}
+                      >
+                        <Pencil size={18} />
+                      </button>
                       <button
                         className="btn btn-ghost"
                         onClick={(e) => { e.stopPropagation(); handleDelete(log.id); }}
@@ -171,7 +183,7 @@ export default function History() {
                       <div style={{ marginBottom: 16 }}>
                         <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
                           <MessageSquare size={14} />
-                          WORKOUT NOTE
+                          {t('workoutNote')}
                         </div>
                         {log.notes ? (
                           <div
@@ -194,7 +206,7 @@ export default function History() {
                             onClick={() => startEdit(log.id, null, '')}
                             style={{ color: '#16C79A', display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}
                           >
-                            <Plus size={14} /> Add a note
+                            <Plus size={14} /> {t('addANote')}
                           </button>
                         )}
                       </div>
@@ -202,7 +214,7 @@ export default function History() {
                       {/* Per-exercise notes + sets */}
                       {log.exercises.map((exercise, idx) => (
                         <div key={idx} style={{ marginBottom: 16 }}>
-                          <div style={{ fontWeight: 500, marginBottom: 6 }}>{exercise.exerciseName}</div>
+                          <div style={{ fontWeight: 500, marginBottom: 6 }}>{translateExercise(lang, exercise.exerciseName)}</div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                             {exercise.sets.map((set, setIdx) => (
                               <div
@@ -215,8 +227,8 @@ export default function History() {
                                 }}
                               >
                                 {timedIds.has(exercise.exerciseId)
-                                  ? formatCount(set.reps, true)
-                                  : `${set.weight}kg × ${set.reps}`}
+                                  ? formatCount(set.reps, true, lang)
+                                  : t('setReps', { weight: set.weight, reps: set.reps })}
                               </div>
                             ))}
                           </div>
@@ -247,7 +259,7 @@ export default function History() {
                               onClick={() => startEdit(log.id, idx, '')}
                               style={{ color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4, padding: 0, marginTop: 6, fontSize: 12 }}
                             >
-                              <Plus size={13} /> Add note
+                              <Plus size={13} /> {t('addNote')}
                             </button>
                           )}
                         </div>
@@ -270,12 +282,12 @@ export default function History() {
         >
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 360 }}>
             <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>
-              {editing.exIndex === null ? 'Workout note' : 'Exercise note'}
+              {editing.exIndex === null ? t('workoutNoteTitle') : t('exerciseNoteTitle')}
             </h2>
             <textarea
               value={editText}
               onChange={e => setEditText(e.target.value)}
-              placeholder="Write your note..."
+              placeholder={t('notePlaceholder')}
               style={{
                 width: '100%',
                 padding: 12,
@@ -294,14 +306,14 @@ export default function History() {
                 onClick={() => setEditing(null)}
                 style={{ flex: 1 }}
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 className="btn btn-primary"
                 onClick={saveEdit}
                 style={{ flex: 1 }}
               >
-                Save
+                {t('save')}
               </button>
             </div>
           </div>

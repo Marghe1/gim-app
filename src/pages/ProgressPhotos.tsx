@@ -9,12 +9,22 @@ import {
   formatBytes,
 } from '../utils/photoStorage';
 import PageHero from '../components/PageHero';
+import { useT, useLang } from '../i18n/context';
+import { progressPhotosStrings } from '../i18n/strings/progressPhotos';
+import { localeFor } from '../i18n/data';
+import type { Lang } from '../i18n/context';
 
-const POSE_LABEL: Record<PhotoPose, string> = {
-  front: 'Front',
-  side: 'Side',
-  back: 'Back',
+// Translation-table key for each pose, used to look up the localized label.
+const POSE_KEY: Record<PhotoPose, string> = {
+  front: 'poseFront',
+  side: 'poseSide',
+  back: 'poseBack',
 };
+
+// Translate a pose to its localized label using the page's `t` function.
+function poseLabel(t: (key: string) => string, pose: PhotoPose): string {
+  return t(POSE_KEY[pose]);
+}
 
 function todayISO(): string {
   const d = new Date();
@@ -23,12 +33,14 @@ function todayISO(): string {
   ).padStart(2, '0')}`;
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, lang: Lang): string {
   const d = new Date(iso + 'T00:00:00');
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString(localeFor(lang), { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function ProgressPhotos() {
+  const t = useT(progressPhotosStrings);
+  const { lang } = useLang();
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [poseFilter, setPoseFilter] = useState<PhotoPose | 'all'>('all');
@@ -80,7 +92,7 @@ export default function ProgressPhotos() {
   }, [filtered]);
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this photo? This cannot be undone.')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     await deletePhoto(id);
     setViewing(null);
     refresh();
@@ -89,10 +101,10 @@ export default function ProgressPhotos() {
   return (
     <div className="home">
       <PageHero
-        eyebrow="See how you change over time"
-        title="Glow Up"
+        eyebrow={t('eyebrow')}
+        title={t('title')}
         stats={[
-          { value: photos.length, label: photos.length === 1 ? 'photo' : 'photos' },
+          { value: photos.length, label: photos.length === 1 ? t('photoSingular') : t('photoPlural') },
           {
             value: (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -100,7 +112,7 @@ export default function ProgressPhotos() {
                 {formatBytes(totalBytes)}
               </span>
             ),
-            label: 'used on this device',
+            label: t('usedOnThisDevice'),
           },
         ]}
       />
@@ -108,7 +120,7 @@ export default function ProgressPhotos() {
       <main className="home-sheet">
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setShowAdd(true)}>
-          <Plus size={18} /> Add photo
+          <Plus size={18} /> {t('addPhoto')}
         </button>
         <button
           className="btn btn-secondary"
@@ -116,7 +128,7 @@ export default function ProgressPhotos() {
           onClick={() => setShowCompare(true)}
           disabled={photos.length < 2}
         >
-          <GitCompareArrows size={18} /> Compare
+          <GitCompareArrows size={18} /> {t('compare')}
         </button>
       </div>
 
@@ -126,7 +138,7 @@ export default function ProgressPhotos() {
           className={`filter-tab ${poseFilter === 'all' ? 'active' : ''}`}
           onClick={() => setPoseFilter('all')}
         >
-          All
+          {t('poseAll')}
         </button>
         {PHOTO_POSES.map((p) => (
           <button
@@ -134,7 +146,7 @@ export default function ProgressPhotos() {
             className={`filter-tab ${poseFilter === p.key ? 'active' : ''}`}
             onClick={() => setPoseFilter(p.key)}
           >
-            {p.label}
+            {poseLabel(t, p.key)}
           </button>
         ))}
       </div>
@@ -142,14 +154,14 @@ export default function ProgressPhotos() {
       {/* Gallery */}
       {loading ? (
         <div className="empty-state">
-          <div className="empty-state-title">Loading…</div>
+          <div className="empty-state-title">{t('loading')}</div>
         </div>
       ) : groups.length === 0 ? (
         <div className="empty-state">
           <Camera size={40} style={{ color: 'var(--gray-300)', marginBottom: 12 }} />
-          <div className="empty-state-title">No photos yet</div>
+          <div className="empty-state-title">{t('emptyTitle')}</div>
           <p style={{ color: 'var(--gray-500)', fontSize: 14 }}>
-            Add your first photo to start tracking your progress.
+            {t('emptyBody')}
           </p>
         </div>
       ) : (
@@ -163,7 +175,7 @@ export default function ProgressPhotos() {
                 marginBottom: 8,
               }}
             >
-              {formatDate(date)}
+              {formatDate(date, lang)}
             </div>
             <div
               style={{
@@ -190,7 +202,7 @@ export default function ProgressPhotos() {
                   {urls[p.id] && (
                     <img
                       src={urls[p.id]}
-                      alt={POSE_LABEL[p.pose]}
+                      alt={poseLabel(t, p.pose)}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   )}
@@ -207,7 +219,7 @@ export default function ProgressPhotos() {
                       padding: '2px 6px',
                     }}
                   >
-                    {POSE_LABEL[p.pose]}
+                    {poseLabel(t, p.pose)}
                   </span>
                 </button>
               ))}
@@ -223,11 +235,18 @@ export default function ProgressPhotos() {
             setShowAdd(false);
             refresh();
           }}
+          t={t}
         />
       )}
 
       {showCompare && (
-        <CompareModal photos={photos} urls={urls} onClose={() => setShowCompare(false)} />
+        <CompareModal
+          photos={photos}
+          urls={urls}
+          onClose={() => setShowCompare(false)}
+          t={t}
+          lang={lang}
+        />
       )}
 
       {viewing && (
@@ -236,6 +255,8 @@ export default function ProgressPhotos() {
           url={urls[viewing.id]}
           onClose={() => setViewing(null)}
           onDelete={() => handleDelete(viewing.id)}
+          t={t}
+          lang={lang}
         />
       )}
       </main>
@@ -248,9 +269,11 @@ export default function ProgressPhotos() {
 function AddPhotoModal({
   onClose,
   onAdded,
+  t,
 }: {
   onClose: () => void;
   onAdded: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
@@ -274,7 +297,7 @@ function AddPhotoModal({
       await addPhoto(file, { date, pose, note: note.trim() || undefined });
       onAdded();
     } catch (e) {
-      alert('Sorry, the photo could not be saved.');
+      alert(t('saveError'));
       setSaving(false);
     }
   }
@@ -283,7 +306,7 @@ function AddPhotoModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Add photo</h2>
+          <h2 className="modal-title">{t('addPhoto')}</h2>
           <button className="btn btn-ghost" onClick={onClose}>
             <X size={20} />
           </button>
@@ -300,7 +323,7 @@ function AddPhotoModal({
         {preview ? (
           <img
             src={preview}
-            alt="Preview"
+            alt={t('previewAlt')}
             onClick={() => inputRef.current?.click()}
             style={{
               width: '100%',
@@ -318,12 +341,12 @@ function AddPhotoModal({
             onClick={() => inputRef.current?.click()}
             style={{ height: 120, marginBottom: 16 }}
           >
-            <Camera size={22} /> Choose a photo
+            <Camera size={22} /> {t('choosePhoto')}
           </button>
         )}
 
         <div className="form-group">
-          <label className="form-label">Pose</label>
+          <label className="form-label">{t('poseLabel')}</label>
           <div className="filter-tabs" style={{ marginBottom: 0 }}>
             {PHOTO_POSES.map((p) => (
               <button
@@ -331,14 +354,14 @@ function AddPhotoModal({
                 className={`filter-tab ${pose === p.key ? 'active' : ''}`}
                 onClick={() => setPose(p.key)}
               >
-                {p.label}
+                {poseLabel(t, p.key)}
               </button>
             ))}
           </div>
         </div>
 
         <div className="form-group">
-          <label className="form-label">Date</label>
+          <label className="form-label">{t('dateLabel')}</label>
           <input
             type="date"
             className="form-input"
@@ -348,22 +371,22 @@ function AddPhotoModal({
         </div>
 
         <div className="form-group">
-          <label className="form-label">Note (optional)</label>
+          <label className="form-label">{t('noteLabel')}</label>
           <input
             type="text"
             className="form-input"
             value={note}
-            placeholder="e.g. after 4 weeks"
+            placeholder={t('notePlaceholder')}
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
 
         <div className="modal-actions">
           <button className="btn btn-ghost" onClick={onClose}>
-            Cancel
+            {t('cancel')}
           </button>
           <button className="btn btn-primary" onClick={save} disabled={!file || saving}>
-            {saving ? 'Saving…' : 'Save photo'}
+            {saving ? t('saving') : t('save')}
           </button>
         </div>
       </div>
@@ -378,18 +401,22 @@ function ViewPhotoModal({
   url,
   onClose,
   onDelete,
+  t,
+  lang,
 }: {
   photo: ProgressPhoto;
   url?: string;
   onClose: () => void;
   onDelete: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+  lang: Lang;
 }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">
-            {POSE_LABEL[photo.pose]} · {formatDate(photo.date)}
+            {poseLabel(t, photo.pose)} · {formatDate(photo.date, lang)}
           </h2>
           <button className="btn btn-ghost" onClick={onClose}>
             <X size={20} />
@@ -398,7 +425,7 @@ function ViewPhotoModal({
         {url && (
           <img
             src={url}
-            alt={POSE_LABEL[photo.pose]}
+            alt={poseLabel(t, photo.pose)}
             style={{
               width: '100%',
               maxHeight: '60vh',
@@ -413,7 +440,7 @@ function ViewPhotoModal({
         )}
         <div className="modal-actions">
           <button className="btn btn-danger" onClick={onDelete}>
-            <Trash2 size={16} /> Delete
+            <Trash2 size={16} /> {t('delete')}
           </button>
         </div>
       </div>
@@ -427,10 +454,14 @@ function CompareModal({
   photos,
   urls,
   onClose,
+  t,
+  lang,
 }: {
   photos: ProgressPhoto[];
   urls: Record<string, string>;
   onClose: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+  lang: Lang;
 }) {
   // Default to a pose that has at least two photos.
   const poseWithEnough =
@@ -465,14 +496,14 @@ function CompareModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Compare</h2>
+          <h2 className="modal-title">{t('compare')}</h2>
           <button className="btn btn-ghost" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
         <div className="form-group">
-          <label className="form-label">Pose (same pose compares fairly)</label>
+          <label className="form-label">{t('comparePoseLabel')}</label>
           <div className="filter-tabs" style={{ marginBottom: 0 }}>
             {PHOTO_POSES.map((p) => {
               const count = photos.filter((ph) => ph.pose === p.key).length;
@@ -484,7 +515,7 @@ function CompareModal({
                   disabled={count < 2}
                   style={count < 2 ? { opacity: 0.4 } : undefined}
                 >
-                  {p.label}
+                  {poseLabel(t, p.key)}
                 </button>
               );
             })}
@@ -493,9 +524,9 @@ function CompareModal({
 
         {ofPose.length < 2 ? (
           <div className="empty-state">
-            <div className="empty-state-title">Need two {POSE_LABEL[pose]} photos</div>
+            <div className="empty-state-title">{t('needTwoPhotos', { pose: poseLabel(t, pose) })}</div>
             <p style={{ color: 'var(--gray-500)', fontSize: 14 }}>
-              Add at least two photos of this pose to compare them.
+              {t('needTwoPhotosBody')}
             </p>
           </div>
         ) : (
@@ -519,7 +550,7 @@ function CompareModal({
               {after && urls[after.id] && (
                 <img
                   src={urls[after.id]}
-                  alt="After"
+                  alt={t('after')}
                   style={{
                     position: 'absolute',
                     inset: 0,
@@ -532,7 +563,7 @@ function CompareModal({
               {before && urls[before.id] && (
                 <img
                   src={urls[before.id]}
-                  alt="Before"
+                  alt={t('before')}
                   style={{
                     position: 'absolute',
                     inset: 0,
@@ -558,8 +589,8 @@ function CompareModal({
                 }}
               />
               {/* Labels */}
-              <span style={cmpLabel('left')}>Before</span>
-              <span style={cmpLabel('right')}>After</span>
+              <span style={cmpLabel('left')}>{t('before')}</span>
+              <span style={cmpLabel('right')}>{t('after')}</span>
             </div>
 
             <input
@@ -573,7 +604,7 @@ function CompareModal({
 
             <div style={{ display: 'flex', gap: 8 }}>
               <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                <label className="form-label">Before</label>
+                <label className="form-label">{t('before')}</label>
                 <select
                   className="form-select"
                   value={beforeId}
@@ -581,13 +612,13 @@ function CompareModal({
                 >
                   {ofPose.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {formatDate(p.date)}
+                      {formatDate(p.date, lang)}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                <label className="form-label">After</label>
+                <label className="form-label">{t('after')}</label>
                 <select
                   className="form-select"
                   value={afterId}
@@ -595,7 +626,7 @@ function CompareModal({
                 >
                   {ofPose.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {formatDate(p.date)}
+                      {formatDate(p.date, lang)}
                     </option>
                   ))}
                 </select>

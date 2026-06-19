@@ -18,6 +18,9 @@ import {
   formatDuration,
   type ProgressionSuggestion,
 } from '../utils/storage';
+import { useT, useLang } from '../i18n/context';
+import { activeWorkoutStrings } from '../i18n/strings/activeWorkout';
+import { translateExercise } from '../i18n/data';
 
 const EFFORT_OPTIONS = [
   { value: 1, emoji: '😴', label: 'Very Easy' },
@@ -30,6 +33,8 @@ const EFFORT_OPTIONS = [
 export default function ActiveWorkout() {
   const { workoutId } = useParams();
   const navigate = useNavigate();
+  const t = useT(activeWorkoutStrings);
+  const { lang } = useLang();
 
   const [workout, setWorkout] = useState<Workout | null>(null);
   // Navigation is by group (a circuit, or a single standalone exercise)
@@ -187,9 +192,9 @@ export default function ActiveWorkout() {
     return (
       <div className="page">
         <div className="empty-state">
-          <p>Workout not found</p>
+          <p>{t('workoutNotFound')}</p>
           <button className="btn btn-primary" onClick={() => navigate('/workouts')}>
-            Back to Workouts
+            {t('backToWorkouts')}
           </button>
         </div>
       </div>
@@ -331,12 +336,12 @@ export default function ActiveWorkout() {
         if (set.weight > 0 && pb.maxWeight > 0 && set.weight > pb.maxWeight) {
           const delta = set.weight - pb.maxWeight;
           const deltaStr = delta % 1 === 0 ? `${delta}` : delta.toFixed(1);
-          showRecord(`🏆 New record! +${deltaStr} kg`);
+          showRecord(t('newRecordWeight', { v: deltaStr }));
           pb.maxWeight = set.weight;
         } else if (set.weight === 0 && pb.maxReps > 0 && set.reps > pb.maxReps) {
           const delta = set.reps - pb.maxReps;
           const isTimed = timedExercises.has(exercise.exerciseId);
-          showRecord(`🏆 New record! +${formatCount(delta, isTimed)}`);
+          showRecord(t('newRecord', { v: formatCount(delta, isTimed, lang) }));
           pb.maxReps = set.reps;
         }
       }
@@ -513,7 +518,7 @@ export default function ActiveWorkout() {
   }
 
   function cancelWorkout() {
-    if (confirm('Cancel this workout? Your progress will be lost.')) {
+    if (confirm(t('cancelWorkoutConfirm'))) {
       navigate('/workouts');
     }
   }
@@ -567,7 +572,7 @@ export default function ActiveWorkout() {
         {/* Weight input */}
         {!isTimed && (
           <div>
-            <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>KG</label>
+            <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>{t('kgLabel')}</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <button
                 className="btn btn-ghost"
@@ -604,7 +609,7 @@ export default function ActiveWorkout() {
 
         {/* Reps / time input */}
         <div>
-          <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>{isTimed ? 'SEC' : 'REPS'}</label>
+          <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>{isTimed ? t('secLabel') : t('repsLabel')}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <button
               className="btn btn-ghost"
@@ -659,7 +664,11 @@ export default function ActiveWorkout() {
         {/* Last time hint */}
         {prev && (
           <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-            Last time: {prev.weight > 0 ? `${prev.weight} kg × ${prev.reps} reps` : formatCount(prev.reps, isTimed)}
+            {t('lastTime', {
+              value: prev.weight > 0
+                ? t('lastTimeWeight', { weight: prev.weight, reps: prev.reps })
+                : formatCount(prev.reps, isTimed, lang),
+            })}
           </div>
         )}
       </div>
@@ -769,16 +778,16 @@ export default function ActiveWorkout() {
           textAlign: 'center',
         }}>
           <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>
-            {isCircuit ? 'Circuit' : 'Exercise'} {currentGroupIndex + 1} of {groups.length}
+            {isCircuit ? t('circuit') : t('exercise')} {t('groupPosition', { current: currentGroupIndex + 1, total: groups.length })}
           </div>
 
           {isCircuit ? (
             <>
               <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>
-                Circuit {currentGroup.label}
+                {t('circuitLabel', { label: currentGroup.label })}
               </div>
               <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 12 }}>
-                {rounds} {rounds === 1 ? 'round' : 'rounds'} · do one set of each, then repeat
+                {rounds === 1 ? t('roundsHintOne', { count: rounds }) : t('roundsHintMany', { count: rounds })}
               </div>
               {/* Exercise list inside the circuit */}
               <div style={{ display: 'grid', gap: 6, textAlign: 'left' }}>
@@ -800,16 +809,16 @@ export default function ActiveWorkout() {
                     >
                       <span style={{ fontWeight: 700, fontSize: 13, minWidth: 24 }}>{item.subLabel}</span>
                       <span style={{ flex: 1, fontSize: 14, textDecoration: skipped ? 'line-through' : 'none' }}>
-                        {item.exercise.exerciseName}
+                        {translateExercise(lang, item.exercise.exerciseName)}
                         <span style={{ opacity: 0.7, marginLeft: 6, fontSize: 12 }}>
                           × {timedExercises.has(item.exercise.exerciseId)
-                            ? formatCount(item.exercise.targetReps, true)
+                            ? formatCount(item.exercise.targetReps, true, lang)
                             : `${item.exercise.targetReps}`}
                         </span>
                       </span>
                       <button
                         onClick={() => openVideo(item.exercise.exerciseId, item.exercise.exerciseName)}
-                        title="How to"
+                        title={t('howTo')}
                         style={{
                           background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8,
                           padding: 8, cursor: 'pointer', display: 'flex', alignItems: 'center',
@@ -834,7 +843,7 @@ export default function ActiveWorkout() {
                           padding: '6px 8px', cursor: 'pointer', color: 'white', fontSize: 11, fontWeight: 600,
                         }}
                       >
-                        {skipped ? 'Undo' : 'Skip'}
+                        {skipped ? t('undo') : t('skip')}
                       </button>
                     </div>
                   );
@@ -853,7 +862,7 @@ export default function ActiveWorkout() {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
                       <button
                         onClick={() => openVideo(item.exercise.exerciseId, item.exercise.exerciseName)}
-                        title="How to"
+                        title={t('howTo')}
                         style={{
                           background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10,
                           padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center',
@@ -863,11 +872,16 @@ export default function ActiveWorkout() {
                       </button>
                     </div>
                     <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-                      {item.exercise.exerciseName}
-                      {skipped && ' (Skipped)'}
+                      {translateExercise(lang, item.exercise.exerciseName)}
+                      {skipped && t('skippedSuffix')}
                     </div>
                     <div style={{ fontSize: 14, opacity: 0.9 }}>
-                      Target: {item.exercise.targetSets} × {isTimed ? formatCount(item.exercise.targetReps, true) : `${item.exercise.targetReps} reps`}
+                      {t('target', {
+                        sets: item.exercise.targetSets,
+                        value: isTimed
+                          ? formatCount(item.exercise.targetReps, true, lang)
+                          : `${item.exercise.targetReps} ${t('repsUnit')}`,
+                      })}
                     </div>
                     {log?.note && (
                       <div
@@ -879,7 +893,7 @@ export default function ActiveWorkout() {
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: 0.8, marginBottom: 4 }}>
                           <MessageSquare size={13} style={{ color: 'white' }} />
-                          <span>Your note (tap to edit)</span>
+                          <span>{t('yourNote')}</span>
                         </div>
                         <div style={{ fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>{log.note}</div>
                       </div>
@@ -889,7 +903,7 @@ export default function ActiveWorkout() {
                         marginTop: 12, padding: 8, background: 'rgba(255,255,255,0.15)',
                         borderRadius: 8, fontSize: 12, textAlign: 'left',
                       }}>
-                        <div style={{ opacity: 0.7, marginBottom: 2 }}>Last note:</div>
+                        <div style={{ opacity: 0.7, marginBottom: 2 }}>{t('lastNote')}</div>
                         <div style={{ fontStyle: 'italic' }}>"{previousNotes[item.exercise.exerciseId]}"</div>
                       </div>
                     )}
@@ -900,7 +914,7 @@ export default function ActiveWorkout() {
                           onClick={() => openNoteModal(item.index)}
                           style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
                         >
-                          <MessageSquare size={16} /> Note
+                          <MessageSquare size={16} /> {t('note')}
                         </button>
                       )}
                       {skipped ? (
@@ -909,7 +923,7 @@ export default function ActiveWorkout() {
                           onClick={() => unskipExercise(item.index)}
                           style={{ background: 'white', color: '#16C79A' }}
                         >
-                          Restore Exercise
+                          {t('restoreExercise')}
                         </button>
                       ) : (
                         <button
@@ -917,7 +931,7 @@ export default function ActiveWorkout() {
                           onClick={() => skipExercise(item.index)}
                           style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
                         >
-                          <SkipForward size={16} /> Skip
+                          <SkipForward size={16} /> {t('skip')}
                         </button>
                       )}
                     </div>
@@ -943,7 +957,7 @@ export default function ActiveWorkout() {
                   fontSize: 13, fontWeight: 700, color: '#6b7280',
                   marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5,
                 }}>
-                  {isCircuit ? `Round ${r + 1}` : `Set ${r + 1}`}
+                  {isCircuit ? t('round', { n: r + 1 }) : t('set', { n: r + 1 })}
                 </div>
                 <div style={{ display: 'grid', gap: 8 }}>
                   {rowItems.map(it =>
@@ -959,7 +973,7 @@ export default function ActiveWorkout() {
             onClick={() => addRound(currentGroup)}
             style={{ marginTop: 4 }}
           >
-            <Plus size={16} /> {isCircuit ? 'Add Round' : 'Add Set'}
+            <Plus size={16} /> {isCircuit ? t('addRound') : t('addSet')}
           </button>
         </div>
 
@@ -972,7 +986,7 @@ export default function ActiveWorkout() {
           color: timerRunning ? 'white' : '#374151',
         }}>
           <div style={{ textAlign: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>REST TIMER</div>
+            <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>{t('restTimer')}</div>
             <div style={{ fontSize: 42, fontWeight: 700, fontFamily: 'monospace' }}>
               {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
             </div>
@@ -987,11 +1001,11 @@ export default function ActiveWorkout() {
             </button>
             {!timerRunning ? (
               <button className="btn btn-secondary btn-sm" onClick={startTimer}>
-                <Play size={16} /> Start
+                <Play size={16} /> {t('start')}
               </button>
             ) : (
               <button className="btn btn-secondary btn-sm" onClick={pauseTimer} style={{ background: 'rgba(255,255,255,0.2)' }}>
-                <Pause size={16} /> Pause
+                <Pause size={16} /> {t('pause')}
               </button>
             )}
             <button
@@ -1019,13 +1033,13 @@ export default function ActiveWorkout() {
           onClick={finishWorkout}
           style={{ padding: 16, fontSize: 16, fontWeight: 600 }}
         >
-          Finish Workout
+          {t('finishWorkout')}
         </button>
       )}
 
       {/* Swipe hint */}
       <div style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 12 }}>
-        Swipe left/right to change {isCircuit ? 'circuit' : 'exercise'}
+        {t('swipeHint', { what: isCircuit ? t('swipeCircuit') : t('swipeExercise') })}
       </div>
 
       {/* Effort Rating Modal */}
@@ -1043,11 +1057,11 @@ export default function ActiveWorkout() {
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
                 {groups[pendingEffortGroupIndex]?.items.length > 1
-                  ? `How was Circuit ${groups[pendingEffortGroupIndex].label}?`
-                  : `How was ${groups[pendingEffortGroupIndex]?.items[0]?.exercise.exerciseName}?`}
+                  ? t('howWasCircuit', { label: groups[pendingEffortGroupIndex].label })
+                  : t('howWasExercise', { name: translateExercise(lang, groups[pendingEffortGroupIndex]?.items[0]?.exercise.exerciseName ?? '') })}
               </h2>
               <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
-                Rate your effort level
+                {t('rateEffort')}
               </p>
             </div>
 
@@ -1079,7 +1093,7 @@ export default function ActiveWorkout() {
               onClick={skipEffortRating}
               style={{ color: '#6b7280' }}
             >
-              Skip
+              {t('skip')}
             </button>
           </div>
         </div>
@@ -1091,17 +1105,20 @@ export default function ActiveWorkout() {
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Workout Complete!</h2>
+              <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{t('workoutComplete')}</h2>
               <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
-                Duration: {formatDuration(finishedLog?.duration ?? elapsedTime)} • {exerciseLogs.length - skippedExercises.size} exercises
-                {skippedExercises.size > 0 && ` (${skippedExercises.size} skipped)`}
+                {t('completeSummary', {
+                  duration: formatDuration(finishedLog?.duration ?? elapsedTime),
+                  count: exerciseLogs.length - skippedExercises.size,
+                })}
+                {skippedExercises.size > 0 && t('skippedCount', { count: skippedExercises.size })}
               </p>
             </div>
 
             {suggestions.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 600, color: '#6b7280', marginBottom: 12 }}>
-                  SUGGESTIONS FOR NEXT TIME
+                  {t('suggestionsTitle')}
                 </h3>
                 <div style={{ display: 'grid', gap: 8 }}>
                   {suggestions.map((s, idx) => (
@@ -1118,7 +1135,7 @@ export default function ActiveWorkout() {
                         {s.reason === 'increase' && '↑ '}
                         {s.reason === 'decrease' && '↓ '}
                         {s.reason === 'maintain' && '✓ '}
-                        {s.exerciseName}
+                        {translateExercise(lang, s.exerciseName)}
                       </div>
                       <div style={{ fontSize: 13, color: '#6b7280' }}>
                         {s.message}
@@ -1132,12 +1149,12 @@ export default function ActiveWorkout() {
             {/* Overall workout note */}
             <div style={{ marginBottom: 20, textAlign: 'left' }}>
               <h3 style={{ fontSize: 14, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
-                NOTE FOR THIS WORKOUT
+                {t('noteForWorkoutTitle')}
               </h3>
               <textarea
                 value={workoutNote}
                 onChange={e => updateWorkoutNote(e.target.value)}
-                placeholder="e.g., 'Felt tired today', 'Great session', 'Cut it short'"
+                placeholder={t('workoutNotePlaceholder')}
                 style={{
                   width: '100%',
                   padding: 12,
@@ -1152,7 +1169,7 @@ export default function ActiveWorkout() {
             </div>
 
             <button className="btn btn-primary btn-block" onClick={goToHistory}>
-              View in History
+              {t('viewInHistory')}
             </button>
           </div>
         </div>
@@ -1172,10 +1189,10 @@ export default function ActiveWorkout() {
           >
             <div style={{ marginBottom: 16 }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
-                Note for {noteExercise.exerciseName}
+                {t('noteForExercise', { name: translateExercise(lang, noteExercise.exerciseName) })}
               </h2>
               <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
-                Leave a note for your future self
+                {t('noteSubtitle')}
               </p>
             </div>
 
@@ -1188,7 +1205,7 @@ export default function ActiveWorkout() {
                 marginBottom: 12,
                 fontSize: 13,
               }}>
-                <div style={{ color: '#6b7280', marginBottom: 4 }}>Previous note:</div>
+                <div style={{ color: '#6b7280', marginBottom: 4 }}>{t('previousNote')}</div>
                 <div style={{ fontStyle: 'italic' }}>
                   "{previousNotes[noteExercise.exerciseId]}"
                 </div>
@@ -1198,7 +1215,7 @@ export default function ActiveWorkout() {
             <textarea
               value={currentNoteText}
               onChange={e => setCurrentNoteText(e.target.value)}
-              placeholder="e.g., 'Felt strong today', 'Watch left knee', 'Try 5kg more next time'"
+              placeholder={t('exerciseNotePlaceholder')}
               style={{
                 width: '100%',
                 padding: 12,
@@ -1218,21 +1235,21 @@ export default function ActiveWorkout() {
                 onClick={clearNote}
                 style={{ flex: 0 }}
               >
-                Clear
+                {t('clear')}
               </button>
               <button
                 className="btn btn-secondary"
                 onClick={() => setShowNoteModal(false)}
                 style={{ flex: 1 }}
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 className="btn btn-primary"
                 onClick={saveNote}
                 style={{ flex: 1 }}
               >
-                Save
+                {t('save')}
               </button>
             </div>
           </div>
