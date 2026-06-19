@@ -9,6 +9,16 @@ import {
   formatBytes,
 } from '../utils/photoStorage';
 import PageHero from '../components/PageHero';
+import BodyMeasurements from '../components/BodyMeasurements';
+import {
+  getBodyProfile,
+  saveBodyProfile,
+  getMeasurements,
+  saveMeasurement,
+  deleteMeasurement,
+  computeBmi,
+} from '../utils/bodyStorage';
+import type { BodyProfile, Measurement } from '../utils/bodyStorage';
 import { useT, useLang } from '../i18n/context';
 import { progressPhotosStrings } from '../i18n/strings/progressPhotos';
 import { localeFor } from '../i18n/data';
@@ -48,6 +58,15 @@ export default function ProgressPhotos() {
   const [showCompare, setShowCompare] = useState(false);
   const [viewing, setViewing] = useState<ProgressPhoto | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Glow Up has two sections: Photos and Body measurements.
+  const [section, setSection] = useState<'photos' | 'body'>('photos');
+  const [bodyProfile, setBodyProfile] = useState<BodyProfile>(() => getBodyProfile());
+  const [measurements, setMeasurements] = useState<Measurement[]>(() => getMeasurements());
+  function reloadBody() {
+    setBodyProfile(getBodyProfile());
+    setMeasurements(getMeasurements());
+  }
 
   // Build/refresh object URLs whenever the photo set changes, and revoke them
   // on cleanup so we don't leak memory.
@@ -98,26 +117,62 @@ export default function ProgressPhotos() {
     refresh();
   }
 
+  const latestM = measurements[measurements.length - 1];
+  const latestBmi = latestM ? computeBmi(latestM.weightKg, bodyProfile.heightCm) : null;
+
   return (
     <div className="home">
       <PageHero
         eyebrow={t('eyebrow')}
         title={t('title')}
-        stats={[
-          { value: photos.length, label: photos.length === 1 ? t('photoSingular') : t('photoPlural') },
-          {
-            value: (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <HardDrive size={20} />
-                {formatBytes(totalBytes)}
-              </span>
-            ),
-            label: t('usedOnThisDevice'),
-          },
-        ]}
+        stats={
+          section === 'body'
+            ? [
+                { value: latestM?.weightKg != null ? `${latestM.weightKg}` : '—', label: t('heroWeight') },
+                { value: latestBmi != null ? `${latestBmi}` : '—', label: t('heroBmi') },
+              ]
+            : [
+                { value: photos.length, label: photos.length === 1 ? t('photoSingular') : t('photoPlural') },
+                {
+                  value: (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <HardDrive size={20} />
+                      {formatBytes(totalBytes)}
+                    </span>
+                  ),
+                  label: t('usedOnThisDevice'),
+                },
+              ]
+        }
       />
 
       <main className="home-sheet">
+      {/* Section switcher: Photos | Body */}
+      <div className="filter-tabs" style={{ marginBottom: 16 }}>
+        <button
+          className={`filter-tab ${section === 'photos' ? 'active' : ''}`}
+          onClick={() => setSection('photos')}
+        >
+          📸 {t('tabPhotos')}
+        </button>
+        <button
+          className={`filter-tab ${section === 'body' ? 'active' : ''}`}
+          onClick={() => setSection('body')}
+        >
+          📏 {t('tabBody')}
+        </button>
+      </div>
+
+      {section === 'body' ? (
+        <BodyMeasurements
+          profile={bodyProfile}
+          measurements={measurements}
+          onSaveProfile={(p) => { saveBodyProfile(p); reloadBody(); }}
+          onSaveMeasurement={(m) => { saveMeasurement(m); reloadBody(); }}
+          onDeleteMeasurement={(id) => { deleteMeasurement(id); reloadBody(); }}
+        />
+      ) : (
+      <>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setShowAdd(true)}>
           <Plus size={18} /> {t('addPhoto')}
@@ -226,6 +281,8 @@ export default function ProgressPhotos() {
             </div>
           </div>
         ))
+      )}
+      </>
       )}
 
       {showAdd && (

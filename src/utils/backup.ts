@@ -10,7 +10,7 @@ import { getAllPhotos, putPhoto } from './photoStorage';
 
 // localStorage keys to back up. Kept here (rather than imported) so the backup
 // format is explicit and stable even if storage.ts internals change.
-const LOCAL_KEYS = ['gymtrack_workouts', 'gymtrack_workout_logs', 'gymtrack_exercises', 'gymtrack_schedule'];
+const LOCAL_KEYS = ['gymtrack_workouts', 'gymtrack_workout_logs', 'gymtrack_exercises', 'gymtrack_schedule', 'gymtrack_body_profile', 'gymtrack_measurements'];
 
 const BACKUP_VERSION = 1;
 

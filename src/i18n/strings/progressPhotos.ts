@@ -4,6 +4,10 @@ export const progressPhotosStrings: Strings = {
   en: {
     eyebrow: 'See how you change over time',
     title: 'Glow Up',
+    tabPhotos: 'Photos',
+    tabBody: 'Body',
+    heroWeight: 'weight (kg)',
+    heroBmi: 'BMI',
     photoSingular: 'photo',
     photoPlural: 'photos',
     usedOnThisDevice: 'used on this device',
@@ -37,6 +41,10 @@ export const progressPhotosStrings: Strings = {
   it: {
     eyebrow: 'Guarda come cambi nel tempo',
     title: 'Glow Up',
+    tabPhotos: 'Foto',
+    tabBody: 'Corpo',
+    heroWeight: 'peso (kg)',
+    heroBmi: 'IMC',
     photoSingular: 'foto',
     photoPlural: 'foto',
     usedOnThisDevice: 'usati su questo dispositivo',
@@ -70,6 +78,10 @@ export const progressPhotosStrings: Strings = {
   fr: {
     eyebrow: 'Voyez comment vous changez au fil du temps',
     title: 'Glow Up',
+    tabPhotos: 'Photos',
+    tabBody: 'Corps',
+    heroWeight: 'poids (kg)',
+    heroBmi: 'IMC',
     photoSingular: 'photo',
     photoPlural: 'photos',
     usedOnThisDevice: 'utilisés sur cet appareil',
