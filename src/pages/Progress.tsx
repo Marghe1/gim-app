@@ -5,7 +5,7 @@ import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/storage';
 import PageHero from '../components/PageHero';
 import { computeSessionStats, effortDistribution, downloadProgressCsv, downloadProgressXlsx } from '../utils/progressStats';
-import { OverallProgressChart, EffortPie, VolumeChart, RepsChart } from '../components/ProgressCharts';
+import { OverallProgressChart, EffortPie, VolumeChart } from '../components/ProgressCharts';
 import { useT, useLang } from '../i18n/context';
 import type { Lang } from '../i18n/context';
 import { progressStrings } from '../i18n/strings/progress';
@@ -135,7 +135,10 @@ export default function Progress() {
 
   // Per-session analytics for the charts and the CSV/Excel export.
   const timedIds = useMemo(() => getTimedExerciseIds(), []);
-  const sessionStats = useMemo(() => computeSessionStats(logs, timedIds), [logs, timedIds]);
+  const sessionStats = useMemo(
+    () => computeSessionStats(logs, timedIds, localeFor(lang)),
+    [logs, timedIds, lang]
+  );
   const effortSlices = useMemo(() => effortDistribution(logs), [logs]);
 
   return (
@@ -196,9 +199,8 @@ export default function Progress() {
           {/* Effort breakdown */}
           <EffortPie slices={effortSlices} />
 
-          {/* Weight & reps over time */}
+          {/* Total weight lifted per workout */}
           <VolumeChart stats={sessionStats} />
-          <RepsChart stats={sessionStats} />
 
           {/* Workout calendar */}
           <WorkoutCalendar logs={logs} t={t} lang={lang} />

@@ -15,6 +15,11 @@ export const progressChartsStrings: Strings = {
     detailHold: 'Hold',
     detailEffort: 'Effort',
     detailTime: 'Time',
+    detailClose: 'Close',
+    detailWhatTitle: 'What this means',
+    detailExplanation:
+      'Your overall score is {score} out of 100. It blends how much weight you lifted, the reps and holds you did, and how hard the workout felt — all compared with your best-ever workout. The closer to 100, the closer you were to your personal best.',
+    detailBestNote: '🔥 This was your best workout so far!',
 
     // Effort pie
     effortPieTitle: 'How hard your workouts felt',
@@ -23,8 +28,8 @@ export const progressChartsStrings: Strings = {
     tooltipTimesMany: '{n} times',
 
     // Volume chart
-    volumeTitle: 'Weight lifted each workout',
-    volumeSubtitle: 'Total kilograms moved (weight × reps).',
+    volumeTitle: 'Total weight lifted',
+    volumeSubtitle: 'Total kilograms you lifted in each workout (weight × reps, added up).',
     legendWeight: 'Weight',
 
     // Reps chart
@@ -54,6 +59,11 @@ export const progressChartsStrings: Strings = {
     detailHold: 'Tenuta',
     detailEffort: 'Sforzo',
     detailTime: 'Tempo',
+    detailClose: 'Chiudi',
+    detailWhatTitle: 'Cosa significa',
+    detailExplanation:
+      'Il tuo punteggio complessivo è {score} su 100. Combina quanto peso hai sollevato, le ripetizioni e le tenute che hai fatto e quanto è stato intenso l\'allenamento, il tutto rispetto al tuo allenamento migliore di sempre. Più ti avvicini a 100, più ti sei avvicinata al tuo record personale.',
+    detailBestNote: '🔥 Questo è stato il tuo allenamento migliore finora!',
 
     // Effort pie
     effortPieTitle: 'Quanto sono stati intensi i tuoi allenamenti',
@@ -62,8 +72,8 @@ export const progressChartsStrings: Strings = {
     tooltipTimesMany: '{n} volte',
 
     // Volume chart
-    volumeTitle: 'Peso sollevato per allenamento',
-    volumeSubtitle: 'Chilogrammi totali mossi (peso × ripetizioni).',
+    volumeTitle: 'Peso totale sollevato',
+    volumeSubtitle: 'Chilogrammi totali sollevati in ogni allenamento (peso × ripetizioni, sommati).',
     legendWeight: 'Peso',
 
     // Reps chart
@@ -93,6 +103,11 @@ export const progressChartsStrings: Strings = {
     detailHold: 'Maintien',
     detailEffort: 'Effort',
     detailTime: 'Temps',
+    detailClose: 'Fermer',
+    detailWhatTitle: 'Ce que cela signifie',
+    detailExplanation:
+      'Votre score global est de {score} sur 100. Il combine le poids soulevé, les répétitions et les maintiens réalisés, et l\'intensité ressentie — le tout comparé à votre meilleure séance. Plus c\'est proche de 100, plus vous étiez proche de votre record personnel.',
+    detailBestNote: '🔥 C\'était votre meilleure séance jusqu\'ici !',
 
     // Effort pie
     effortPieTitle: 'Intensité ressentie de vos séances',
@@ -101,8 +116,8 @@ export const progressChartsStrings: Strings = {
     tooltipTimesMany: '{n} fois',
 
     // Volume chart
-    volumeTitle: 'Poids soulevé par séance',
-    volumeSubtitle: 'Total de kilogrammes déplacés (poids × répétitions).',
+    volumeTitle: 'Poids total soulevé',
+    volumeSubtitle: 'Kilogrammes totaux soulevés à chaque séance (poids × répétitions, additionnés).',
     legendWeight: 'Poids',
 
     // Reps chart

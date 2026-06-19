@@ -33,7 +33,11 @@ export interface SessionStat {
  * Components with no data (e.g. a bodyweight-only session has no volume) are
  * dropped and the remaining weights are renormalised.
  */
-export function computeSessionStats(logs: WorkoutLog[], timedIds: Set<string>): SessionStat[] {
+export function computeSessionStats(
+  logs: WorkoutLog[],
+  timedIds: Set<string>,
+  locale: string = 'en-GB'
+): SessionStat[] {
   const completed = logs
     .filter(l => l.completed)
     .slice()
@@ -96,7 +100,7 @@ export function computeSessionStats(logs: WorkoutLog[], timedIds: Set<string>): 
     return {
       id: b.log.id,
       date: b.log.date,
-      dateLabel: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+      dateLabel: d.toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
       workoutName: b.log.workoutName,
       durationSec: b.log.duration,
       exercises: b.log.exercises.length,

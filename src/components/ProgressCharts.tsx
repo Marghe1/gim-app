@@ -14,7 +14,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { Info } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 import type { SessionStat, EffortSlice } from '../utils/progressStats';
 import { EFFORT_META } from '../utils/progressStats';
 import { formatDuration } from '../utils/storage';
@@ -34,7 +34,6 @@ const EFFORT_LABEL_KEY: Record<string, string> = {
 
 const MINT = '#16c79a';
 const CORAL = '#ff8a80';
-const SKY = '#6cc8ff';
 const LAVENDER = '#b9a7f0';
 const GRID = '#e2eae7';
 
@@ -94,7 +93,7 @@ export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
           margin={{ top: 18, right: 6, left: -18, bottom: 0 }}
           onClick={(state: any) => {
             const p = state?.activePayload?.[0]?.payload as SessionStat | undefined;
-            if (p) setSelectedId(prev => (prev === p.id ? null : p.id));
+            if (p) setSelectedId(p.id);
           }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
@@ -105,7 +104,16 @@ export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
             formatter={(value: any, name: any) => [value, name === 'score' ? t('legendScore') : t('legendTrend')]}
             labelFormatter={(l: any) => l}
           />
-          <Bar dataKey="score" radius={[6, 6, 0, 0]} cursor="pointer" maxBarSize={42}>
+          <Bar
+            dataKey="score"
+            radius={[6, 6, 0, 0]}
+            cursor="pointer"
+            maxBarSize={42}
+            onClick={(d: any) => {
+              const id = d?.id ?? d?.payload?.id;
+              if (id) setSelectedId(id);
+            }}
+          >
             {data.map(d => (
               <Cell key={d.id} fill={d.isBest ? CORAL : MINT} fillOpacity={selectedId && selectedId !== d.id ? 0.4 : 1} />
             ))}
@@ -122,30 +130,49 @@ export function OverallProgressChart({ stats }: { stats: SessionStat[] }) {
       )}
 
       {selected && (
-        <div
-          style={{
-            marginTop: 12,
-            padding: 14,
-            borderRadius: 'var(--radius-sm)',
-            background: 'var(--mint-wash)',
-            border: '1px solid var(--mint-soft)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <strong>{selected.workoutName}</strong>
-            <span style={{ fontSize: 13, color: 'var(--gray-500)' }}>
-              {new Date(selected.date).toLocaleDateString(localeFor(lang), { day: 'numeric', month: 'short', year: 'numeric' })}
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 13 }}>
-            <Pill label={t('detailScore')} value={`${selected.score}${selected.isBest ? ' 🔥' : ''}`} />
-            <Pill label={t('detailWeight')} value={`${selected.volume.toLocaleString(localeFor(lang))} kg`} />
-            <Pill label={t('detailReps')} value={`${selected.reps}`} />
-            {selected.timeSec > 0 && <Pill label={t('detailHold')} value={`${selected.timeSec}s`} />}
-            {selected.avgEffort !== null && (
-              <Pill label={t('detailEffort')} value={`${effortFor(selected.avgEffort)?.emoji ?? ''} ${selected.avgEffort.toFixed(1)}`} />
-            )}
-            <Pill label={t('detailTime')} value={formatDuration(selected.durationSec)} />
+        <div className="modal-overlay" onClick={() => setSelectedId(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <div>
+                <h2 className="modal-title">{selected.workoutName}</h2>
+                <div style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 2 }}>
+                  {new Date(selected.date).toLocaleDateString(localeFor(lang), {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </div>
+              </div>
+              <button className="btn btn-ghost" onClick={() => setSelectedId(null)} aria-label={t('detailClose')}>
+                <X size={22} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 13, marginBottom: 18 }}>
+              <Pill label={t('detailScore')} value={`${selected.score}${selected.isBest ? ' 🔥' : ''}`} />
+              <Pill label={t('detailWeight')} value={`${selected.volume.toLocaleString(localeFor(lang))} kg`} />
+              <Pill label={t('detailReps')} value={`${selected.reps}`} />
+              {selected.timeSec > 0 && <Pill label={t('detailHold')} value={`${selected.timeSec}s`} />}
+              {selected.avgEffort !== null && (
+                <Pill label={t('detailEffort')} value={`${effortFor(selected.avgEffort)?.emoji ?? ''} ${selected.avgEffort.toFixed(1)}`} />
+              )}
+              <Pill label={t('detailTime')} value={formatDuration(selected.durationSec)} />
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--gray-200)', paddingTop: 14 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Info size={15} /> {t('detailWhatTitle')}
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.55, margin: 0 }}>
+                {t('detailExplanation', { score: selected.score })}
+              </p>
+              {selected.isBest && (
+                <p style={{ fontSize: 13, color: 'var(--primary-dark)', fontWeight: 600, marginTop: 8 }}>
+                  {t('detailBestNote')}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -280,18 +307,6 @@ export function VolumeChart({ stats }: { stats: SessionStat[] }) {
   return (
     <ChartCard title={t('volumeTitle')} subtitle={t('volumeSubtitle')}>
       <TimeSeriesBars stats={stats} dataKey="volume" color={MINT} unit="kg" label={t('legendWeight')} locale={localeFor(lang)} />
-    </ChartCard>
-  );
-}
-
-export function RepsChart({ stats }: { stats: SessionStat[] }) {
-  const t = useT(progressChartsStrings);
-  const { lang } = useLang();
-  const hasReps = stats.some(s => s.reps > 0);
-  if (!hasReps) return null;
-  return (
-    <ChartCard title={t('repsTitle')} subtitle={t('repsSubtitle')}>
-      <TimeSeriesBars stats={stats} dataKey="reps" color={SKY} unit={t('unitReps')} label={t('legendReps')} locale={localeFor(lang)} />
     </ChartCard>
   );
 }

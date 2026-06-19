@@ -1138,7 +1138,14 @@ export default function ActiveWorkout() {
                         {translateExercise(lang, s.exerciseName)}
                       </div>
                       <div style={{ fontSize: 13, color: '#6b7280' }}>
-                        {s.message}
+                        {s.reason === 'increase'
+                          ? t('suggIncrease', {
+                              weight: s.suggestedWeight,
+                              delta: Math.round((s.suggestedWeight - s.currentWeight) * 10) / 10,
+                            })
+                          : s.reason === 'decrease'
+                            ? t('suggDecrease', { weight: s.currentWeight })
+                            : t('suggMaintain', { weight: s.currentWeight })}
                       </div>
                     </div>
                   ))}

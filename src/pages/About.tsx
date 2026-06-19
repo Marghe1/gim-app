@@ -1,42 +1,46 @@
 import { useRef, useState } from 'react';
 import { Heart, CloudRain, Download, Upload } from 'lucide-react';
 import { exportBackup, importBackup } from '../utils/backup';
+import { useT, useLang, LANGS, LANG_LABELS } from '../i18n/context';
+import { aboutStrings } from '../i18n/strings/about';
 
 export default function About() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
   const [message, setMessage] = useState<string>('');
+  const t = useT(aboutStrings);
+  const { lang, setLang } = useLang();
 
   async function handleExport() {
     setBusy('export');
     setMessage('');
     try {
       await exportBackup();
-      setMessage('Backup saved. Keep the file somewhere safe.');
+      setMessage(t('exportDone'));
     } catch {
-      setMessage('Sorry, the backup could not be created.');
+      setMessage(t('exportFail'));
     } finally {
       setBusy(null);
     }
   }
 
   async function handleImportFile(file: File) {
-    if (
-      !confirm(
-        'Restore from this backup? Your current workouts will be replaced, and the photos from the backup will be added.'
-      )
-    )
-      return;
+    if (!confirm(t('restoreConfirm'))) return;
     setBusy('import');
     setMessage('');
     try {
       const s = await importBackup(file);
       setMessage(
-        `Restored ${s.workouts} workouts, ${s.logs} sessions, ${s.exercises} exercises and ${s.photos} photos. Reloading…`
+        t('restoreDone', {
+          workouts: s.workouts,
+          logs: s.logs,
+          exercises: s.exercises,
+          photos: s.photos,
+        })
       );
       setTimeout(() => window.location.reload(), 1200);
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Sorry, the backup could not be restored.');
+      setMessage(e instanceof Error ? e.message : t('restoreFail'));
       setBusy(null);
     }
   }
@@ -79,7 +83,7 @@ export default function About() {
           marginBottom: 24,
         }}
       >
-        My very first app. Built with curiosity, a lot of patience and even more love.
+        {t('bio')}
       </p>
 
       <div
@@ -91,19 +95,37 @@ export default function About() {
           gap: 6,
         }}
       >
-        <span>Made with</span>
+        <span>{t('madeWith')}</span>
         <Heart size={14} style={{ color: '#ec4899', fill: '#ec4899' }} />
-        <span>by Margherita in Brussels</span>
+        <span>{t('madeBy')}</span>
+      </div>
+
+      {/* Language */}
+      <div className="card" style={{ width: '100%', maxWidth: 360, marginTop: 32, textAlign: 'left' }}>
+        <div className="card-header">
+          <div className="card-title">{t('language')}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          {LANGS.map((l) => (
+            <button
+              key={l}
+              className={`btn btn-block ${lang === l ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setLang(l)}
+              aria-pressed={lang === l}
+            >
+              {LANG_LABELS[l]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Backup & restore */}
-      <div className="card" style={{ width: '100%', maxWidth: 360, marginTop: 32, textAlign: 'left' }}>
+      <div className="card" style={{ width: '100%', maxWidth: 360, marginTop: 16, textAlign: 'left' }}>
         <div className="card-header">
-          <div className="card-title">Backup &amp; restore</div>
+          <div className="card-title">{t('backupTitle')}</div>
         </div>
         <div className="card-subtitle" style={{ marginBottom: 16 }}>
-          Saves your workouts and photos into one file. Use it to move to a new phone or recover
-          your data.
+          {t('backupSubtitle')}
         </div>
 
         <input
@@ -124,14 +146,14 @@ export default function About() {
           disabled={busy !== null}
           style={{ marginBottom: 8 }}
         >
-          <Download size={18} /> {busy === 'export' ? 'Preparing…' : 'Export backup'}
+          <Download size={18} /> {busy === 'export' ? t('preparing') : t('exportBackup')}
         </button>
         <button
           className="btn btn-secondary btn-block"
           onClick={() => fileRef.current?.click()}
           disabled={busy !== null}
         >
-          <Upload size={18} /> {busy === 'import' ? 'Restoring…' : 'Restore backup'}
+          <Upload size={18} /> {busy === 'import' ? t('restoring') : t('restoreBackup')}
         </button>
 
         {message && (
@@ -143,7 +165,7 @@ export default function About() {
 
       <div style={{ marginTop: 32, fontSize: 12, color: '#d1d5db', lineHeight: 1.8 }}>
         <div>2026</div>
-        <div>Version: {__BUILD_TIME__}</div>
+        <div>{t('version')}: {__BUILD_TIME__}</div>
       </div>
     </div>
   );
