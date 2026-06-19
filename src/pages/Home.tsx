@@ -12,8 +12,9 @@ import {
   Upload,
   Settings,
 } from 'lucide-react';
-import { getWorkouts, getWorkoutLogs, getExercises, getSchedule, localDateKey } from '../utils/storage';
+import { getWorkouts, getWorkoutLogs, getSchedule, localDateKey } from '../utils/storage';
 import { getUserProfile } from '../utils/profileStorage';
+import { exportBackup, importBackup } from '../utils/backup';
 import PageHero from '../components/PageHero';
 import { useT, useLang } from '../i18n/context';
 import { localeFor } from '../i18n/data';
@@ -55,54 +56,29 @@ export default function Home() {
     return logDate >= startOfWeek && log.completed;
   }).length;
 
-  function exportData() {
-    const data = {
-      version: 1,
-      exportDate: new Date().toISOString(),
-      exercises: getExercises(),
-      workouts: getWorkouts(),
-      workoutLogs: getWorkoutLogs(),
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `gymapp-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Use the shared, COMPLETE backup (utils/backup.ts) so the file contains
+  // everything — workouts, body measures, profile, settings AND the Glow Up
+  // photos — not just the workout data. (An old partial export used to live
+  // here and silently skipped photos and measurements.)
+  async function exportData() {
+    try {
+      await exportBackup();
+    } catch {
+      alert(t('exportError'));
+    }
   }
 
-  function importData(event: React.ChangeEvent<HTMLInputElement>) {
+  async function importData(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-
-        if (!data.version || !data.exercises || !data.workouts || !data.workoutLogs) {
-          alert(t('invalidBackup'));
-          return;
-        }
-
-        if (confirm(t('confirmRestore'))) {
-          localStorage.setItem('gymtrack_exercises', JSON.stringify(data.exercises));
-          localStorage.setItem('gymtrack_workouts', JSON.stringify(data.workouts));
-          localStorage.setItem('gymtrack_workout_logs', JSON.stringify(data.workoutLogs));
-          alert(t('restoreSuccess'));
-          window.location.reload();
-        }
-      } catch {
-        alert(t('restoreError'));
-      }
-    };
-    reader.readAsText(file);
-
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (!confirm(t('confirmRestore'))) return;
+    try {
+      await importBackup(file);
+      alert(t('restoreSuccess'));
+      window.location.reload();
+    } catch {
+      alert(t('restoreError'));
     }
   }
 

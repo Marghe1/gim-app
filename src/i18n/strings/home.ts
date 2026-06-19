@@ -30,6 +30,7 @@ export const homeStrings: Strings = {
     confirmRestore: 'This will replace all your current data. Continue?',
     restoreSuccess: 'Data restored successfully!',
     restoreError: 'Error reading backup file',
+    exportError: 'Sorry, the backup could not be created.',
   },
   it: {
     greetingMorning: 'Buongiorno',
@@ -60,6 +61,7 @@ export const homeStrings: Strings = {
     confirmRestore: 'Questo sostituirà tutti i tuoi dati attuali. Continuare?',
     restoreSuccess: 'Dati ripristinati con successo!',
     restoreError: 'Errore durante la lettura del file di backup',
+    exportError: 'Spiacenti, non è stato possibile creare il backup.',
   },
   fr: {
     greetingMorning: 'Bonjour',
@@ -90,5 +92,6 @@ export const homeStrings: Strings = {
     confirmRestore: 'Cela remplacera toutes vos données actuelles. Continuer ?',
     restoreSuccess: 'Données restaurées avec succès !',
     restoreError: 'Erreur lors de la lecture du fichier de sauvegarde',
+    exportError: 'Désolé, la sauvegarde n’a pas pu être créée.',
   },
 };

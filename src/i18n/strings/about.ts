@@ -16,7 +16,7 @@ export const aboutStrings: Strings = {
     exportDone: 'Backup saved. Keep the file somewhere safe.',
     exportFail: 'Sorry, the backup could not be created.',
     restoreConfirm:
-      'Restore from this backup? Your current workouts will be replaced, and the photos from the backup will be added.',
+      'Restore from this backup? Everything on this device — workouts, sessions, body measures, profile and settings — will be replaced by the backup, and its photos added. This cannot be undone.',
     restoreDone:
       'Restored {workouts} workouts, {logs} sessions, {exercises} exercises, {measurements} body entries and {photos} photos. Reloading…',
     restoreFail: 'Sorry, the backup could not be restored.',
@@ -40,7 +40,7 @@ export const aboutStrings: Strings = {
     exportDone: 'Backup salvato. Conserva il file in un posto sicuro.',
     exportFail: 'Spiacenti, non è stato possibile creare il backup.',
     restoreConfirm:
-      'Ripristinare da questo backup? I tuoi allenamenti attuali verranno sostituiti e le foto del backup verranno aggiunte.',
+      'Ripristinare da questo backup? Tutto su questo dispositivo — allenamenti, sessioni, misurazioni, profilo e impostazioni — verrà sostituito dal backup e le sue foto aggiunte. Non si può annullare.',
     restoreDone:
       'Ripristinati {workouts} allenamenti, {logs} sessioni, {exercises} esercizi, {measurements} misurazioni e {photos} foto. Ricaricamento…',
     restoreFail: 'Spiacenti, non è stato possibile ripristinare il backup.',
@@ -64,7 +64,7 @@ export const aboutStrings: Strings = {
     exportDone: 'Sauvegarde enregistrée. Garde le fichier en lieu sûr.',
     exportFail: 'Désolé, la sauvegarde n’a pas pu être créée.',
     restoreConfirm:
-      'Restaurer à partir de cette sauvegarde ? Tes séances actuelles seront remplacées et les photos de la sauvegarde seront ajoutées.',
+      'Restaurer à partir de cette sauvegarde ? Tout sur cet appareil — séances, sessions, mesures, profil et réglages — sera remplacé par la sauvegarde, et ses photos ajoutées. Action irréversible.',
     restoreDone:
       'Restauré {workouts} séances, {logs} sessions, {exercises} exercices, {measurements} mesures et {photos} photos. Rechargement…',
     restoreFail: 'Désolé, la sauvegarde n’a pas pu être restaurée.',
