@@ -132,8 +132,6 @@ export default function Progress() {
     return [`${value} ${t('unitReps')}`, t('reps')];
   }
 
-  const weekDelta = weeklyStats.thisWeek - weeklyStats.lastWeek;
-
   // Per-session analytics for the charts and the CSV/Excel export.
   const timedIds = useMemo(() => getTimedExerciseIds(), []);
   const sessionStats = useMemo(
@@ -145,15 +143,7 @@ export default function Progress() {
   return (
     <div className="home">
       <PageHero
-        eyebrow={
-          weeklyStats.lastWeek > 0
-            ? weekDelta === 0
-              ? t('eyebrowSame')
-              : weekDelta > 0
-                ? t('eyebrowUp', { n: Math.abs(weekDelta) })
-                : t('eyebrowDown', { n: Math.abs(weekDelta) })
-            : t('eyebrowDefault')
-        }
+        eyebrow={t('eyebrowDefault')}
         title={t('title')}
         stats={[
           { value: weeklyStats.thisWeek, label: t('statThisWeek') },

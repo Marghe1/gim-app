@@ -11,7 +11,9 @@ import ProgressPhotos from './pages/ProgressPhotos';
 import ActiveWorkout from './pages/ActiveWorkout';
 import LogPastWorkout from './pages/LogPastWorkout';
 import About from './pages/About';
+import Privacy from './pages/Privacy';
 import UpdatePrompt from './components/UpdatePrompt';
+import InstallPrompt from './components/InstallPrompt';
 import FloatingTimer from './components/FloatingTimer';
 
 // The manual timer is only useful while working out, so show it only on the
@@ -26,6 +28,7 @@ function App() {
   return (
     <BrowserRouter>
       <UpdatePrompt />
+      <InstallPrompt />
       <WorkoutTimer />
       <Routes>
         <Route path="/" element={<Layout />}>
@@ -38,6 +41,7 @@ function App() {
           <Route path="progress" element={<Progress />} />
           <Route path="photos" element={<ProgressPhotos />} />
           <Route path="about" element={<About />} />
+          <Route path="privacy" element={<Privacy />} />
         </Route>
         <Route path="/workout/:workoutId" element={<ActiveWorkout />} />
         <Route path="/log-past" element={<LogPastWorkout />} />
