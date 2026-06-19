@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import { Plus, X, Trash2, Pencil, Ruler } from 'lucide-react';
+import { Plus, X, Trash2, Pencil, Ruler, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   ComposedChart,
   BarChart,
@@ -50,6 +50,8 @@ export default function BodyMeasurements({
   const { lang } = useLang();
   const locale = localeFor(lang);
   const [editing, setEditing] = useState<Measurement | null>(null);
+  // History can get long, so keep it collapsed until the user taps to open it.
+  const [showHistory, setShowHistory] = useState(false);
   // Local string state so decimals (e.g. 72.5) can be typed in the weight field.
   const [weightInput, setWeightInput] = useState(profile.weightKg != null ? String(profile.weightKg) : '');
 
@@ -199,10 +201,31 @@ export default function BodyMeasurements({
             )}
           </ChartCard>
 
-          {/* History list */}
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '8px 4px 12px' }}>
-            {t('history')}
-          </h3>
+          {/* History list (collapsed by default — tap to expand) */}
+          <button
+            onClick={() => setShowHistory(o => !o)}
+            aria-expanded={showHistory}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              width: '100%',
+              margin: '8px 4px 12px',
+              padding: 0,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'inherit',
+            }}
+          >
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600 }}>{t('history')}</h3>
+            <span style={{ fontSize: 13, color: 'var(--gray-500)' }}>({measurements.length})</span>
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', color: 'var(--gray-500)' }}>
+              {showHistory ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </span>
+          </button>
+
+          {showHistory && (
           <div className="list">
             {[...measurements].reverse().map(m => {
               const bmi = computeBmi(m.weightKg, profile.heightCm);
@@ -236,6 +259,7 @@ export default function BodyMeasurements({
               );
             })}
           </div>
+          )}
         </>
       )}
 
