@@ -20,6 +20,9 @@ export const aboutStrings: Strings = {
     restoreDone:
       'Restored {workouts} workouts, {logs} sessions, {exercises} exercises and {photos} photos. Reloading…',
     restoreFail: 'Sorry, the backup could not be restored.',
+    helpTitle: 'Help',
+    showTutorial: 'Show the welcome tour again',
+    privacyLink: 'Privacy & terms',
     version: 'Version',
   },
   it: {
@@ -41,6 +44,9 @@ export const aboutStrings: Strings = {
     restoreDone:
       'Ripristinati {workouts} allenamenti, {logs} sessioni, {exercises} esercizi e {photos} foto. Ricaricamento…',
     restoreFail: 'Spiacenti, non è stato possibile ripristinare il backup.',
+    helpTitle: 'Aiuto',
+    showTutorial: 'Rivedi il tour di benvenuto',
+    privacyLink: 'Privacy e termini',
     version: 'Versione',
   },
   fr: {
@@ -62,6 +68,9 @@ export const aboutStrings: Strings = {
     restoreDone:
       'Restauré {workouts} séances, {logs} sessions, {exercises} exercices et {photos} photos. Rechargement…',
     restoreFail: 'Désolé, la sauvegarde n’a pas pu être restaurée.',
+    helpTitle: 'Aide',
+    showTutorial: 'Revoir le tour de bienvenue',
+    privacyLink: 'Confidentialité et conditions',
     version: 'Version',
   },
 };

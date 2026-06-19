@@ -718,8 +718,9 @@ h1, h2, h3, .stat-value {
 .quick-icon[data-accent='coral'] { background: var(--coral); }
 .quick-icon[data-accent='amber'] { background: var(--amber); }
 
-/* Update available banner */
-.update-prompt {
+/* Update available + install banners (share the same look & position) */
+.update-prompt,
+.install-prompt {
   position: fixed;
   left: 16px;
   right: 16px;
@@ -749,7 +750,8 @@ h1, h2, h3, .stat-value {
   50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0.25); }
 }
 
-.update-prompt button {
+.update-prompt button,
+.install-prompt button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -764,7 +766,8 @@ h1, h2, h3, .stat-value {
   cursor: pointer;
 }
 
-.update-prompt button:active {
+.update-prompt button:active,
+.install-prompt button:active {
   background: var(--primary-dark);
 }
 

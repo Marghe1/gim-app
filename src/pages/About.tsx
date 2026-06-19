@@ -1,15 +1,26 @@
 import { useRef, useState } from 'react';
-import { Heart, CloudRain, Download, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Heart, CloudRain, Download, Upload, RotateCcw, Shield } from 'lucide-react';
 import { exportBackup, importBackup } from '../utils/backup';
 import { useT, useLang, LANGS, LANG_LABELS } from '../i18n/context';
 import { aboutStrings } from '../i18n/strings/about';
+import { shareStrings } from '../i18n/strings/share';
+import { clearOnboardingSeen } from '../utils/uiFlags';
+import FeedbackCard from '../components/FeedbackCard';
+import ShareButton from '../components/ShareButton';
 
 export default function About() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
   const [message, setMessage] = useState<string>('');
   const t = useT(aboutStrings);
+  const tShare = useT(shareStrings);
   const { lang, setLang } = useLang();
+
+  function replayTutorial() {
+    clearOnboardingSeen();
+    window.location.reload();
+  }
 
   async function handleExport() {
     setBusy('export');
@@ -161,6 +172,33 @@ export default function About() {
             {message}
           </p>
         )}
+      </div>
+
+      {/* Feedback */}
+      <FeedbackCard />
+
+      {/* Tell a friend */}
+      <div className="card" style={{ width: '100%', maxWidth: 360, marginTop: 16, textAlign: 'left' }}>
+        <div className="card-header">
+          <div className="card-title">{tShare('cardTitle')}</div>
+        </div>
+        <div className="card-subtitle" style={{ marginBottom: 16 }}>
+          {tShare('cardSubtitle')}
+        </div>
+        <ShareButton variant="secondary" />
+      </div>
+
+      {/* Help & privacy */}
+      <div className="card" style={{ width: '100%', maxWidth: 360, marginTop: 16, textAlign: 'left' }}>
+        <div className="card-header">
+          <div className="card-title">{t('helpTitle')}</div>
+        </div>
+        <button className="btn btn-secondary btn-block" onClick={replayTutorial} style={{ marginTop: 4 }}>
+          <RotateCcw size={18} /> {t('showTutorial')}
+        </button>
+        <Link to="/privacy" className="btn btn-ghost btn-block" style={{ marginTop: 8 }}>
+          <Shield size={18} /> {t('privacyLink')}
+        </Link>
       </div>
 
       <div style={{ marginTop: 32, fontSize: 12, color: '#d1d5db', lineHeight: 1.8 }}>
