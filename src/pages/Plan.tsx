@@ -1,15 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, ChevronLeft, ChevronRight, Play, X, Wand2, Trash2 } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Play, X, Trash2 } from 'lucide-react';
 import type { Workout, WorkoutSchedule } from '../utils/storage';
 import { getWorkouts, getSchedule, saveSchedule, localDateKey } from '../utils/storage';
 import PageHero from '../components/PageHero';
 import { useT, useLang } from '../i18n/context';
 import { planStrings } from '../i18n/strings/plan';
 import { localeFor, translateTemplateName } from '../i18n/data';
-
-// Auto-plan targets: Tuesday (2) and Thursday (4) — getDay() numbering.
-const AUTO_PLAN_DAYS = [2, 4];
 
 export default function Plan() {
   const navigate = useNavigate();
@@ -24,6 +21,16 @@ export default function Plan() {
     return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 1 + i)));
   }, [locale]);
 
+  // Full weekday names, Monday-first, paired with their getDay() number
+  // (0=Sun..6=Sat) for the weekly planner.
+  const weekdays = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: 'long' });
+    return [1, 2, 3, 4, 5, 6, 0].map(gd => ({
+      gd,
+      label: fmt.format(new Date(2024, 0, 1 + ((gd + 6) % 7))),
+    }));
+  }, [locale]);
+
   // Localized full month name for the viewed month.
   const monthLabel = (year: number, month: number) =>
     new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(year, month, 1));
@@ -35,6 +42,9 @@ export default function Plan() {
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() });
   // Date key currently being assigned a workout (picker modal), or null.
   const [pickerDate, setPickerDate] = useState<string | null>(null);
+  // Weekly planner modal: build a getDay() -> workout id map ('' = rest day).
+  const [showWeekPlanner, setShowWeekPlanner] = useState(false);
+  const [weekPlan, setWeekPlan] = useState<Record<number, string>>({});
 
   const monthPrefix = `${view.year}-${String(view.month + 1).padStart(2, '0')}-`;
 
@@ -75,27 +85,31 @@ export default function Plan() {
     [schedule, monthPrefix]
   );
 
-  // Fill every Tuesday & Thursday of the viewed month, cycling through the
-  // saved workouts so each day starts with a suggestion the user can change.
-  function autoPlan() {
+  function openWeekPlanner() {
     if (workouts.length === 0) {
       alert(t('addWorkoutFirst'));
       return;
     }
-    if (!confirm(t('confirmAutoPlan'))) {
-      return;
-    }
+    setWeekPlan({});
+    setShowWeekPlanner(true);
+  }
+
+  // Apply the weekly pattern across the viewed month: each weekday with a
+  // workout chosen is filled on every matching date; weekdays left as "Rest"
+  // are cleared, so the month matches the week shown.
+  function applyWeekPlan() {
+    if (!confirm(t('confirmWeekPlan', { month: monthLabel(view.year, view.month) }))) return;
     const next = { ...schedule };
     const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
-    let i = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(view.year, view.month, d);
-      if (AUTO_PLAN_DAYS.includes(date.getDay())) {
-        next[localDateKey(date)] = workouts[i % workouts.length].id;
-        i++;
-      }
+      const key = localDateKey(date);
+      const wid = weekPlan[date.getDay()];
+      if (wid) next[key] = wid;
+      else delete next[key];
     }
     persist(next);
+    setShowWeekPlanner(false);
   }
 
   function clearMonth() {
@@ -141,9 +155,9 @@ export default function Plan() {
 
       <main className="home-sheet">
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <button className="btn btn-primary" style={{ flex: 1 }} onClick={autoPlan}>
-          <Wand2 size={18} />
-          {t('planTueThu')}
+        <button className="btn btn-primary" style={{ flex: 1 }} onClick={openWeekPlanner}>
+          <CalendarDays size={18} />
+          {t('planWeek')}
         </button>
         <button
           className="btn btn-secondary"
@@ -316,6 +330,51 @@ export default function Plan() {
                 <Trash2 size={16} /> {t('removeFromDay')}
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Weekly planner: choose a workout for each day of the week */}
+      {showWeekPlanner && (
+        <div className="modal-overlay" onClick={() => setShowWeekPlanner(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 className="modal-title">{t('planWeekTitle')}</h2>
+              <button className="btn btn-ghost" style={{ padding: 4 }} aria-label={t('close')} onClick={() => setShowWeekPlanner(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
+              {t('planWeekSubtitle', { month: monthLabel(view.year, view.month) })}
+            </p>
+
+            <div style={{ display: 'grid', gap: 10, marginBottom: 4 }}>
+              {weekdays.map(({ gd, label }) => (
+                <div key={gd} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ width: 92, fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>{label}</span>
+                  <select
+                    className="form-select"
+                    style={{ flex: 1 }}
+                    value={weekPlan[gd] ?? ''}
+                    onChange={e => setWeekPlan(p => ({ ...p, [gd]: e.target.value }))}
+                  >
+                    <option value="">{t('rest')}</option>
+                    {workouts.map(w => (
+                      <option key={w.id} value={w.id}>{workoutLabel(w)}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowWeekPlanner(false)}>
+                {t('cancel')}
+              </button>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={applyWeekPlan}>
+                {t('apply')}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -13,6 +13,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { getWorkouts, getWorkoutLogs, getExercises, getSchedule, localDateKey } from '../utils/storage';
+import { getUserProfile } from '../utils/profileStorage';
 import PageHero from '../components/PageHero';
 import { useT, useLang } from '../i18n/context';
 import { localeFor } from '../i18n/data';

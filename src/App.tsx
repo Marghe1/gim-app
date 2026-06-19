@@ -12,6 +12,7 @@ import ActiveWorkout from './pages/ActiveWorkout';
 import LogPastWorkout from './pages/LogPastWorkout';
 import About from './pages/About';
 import Privacy from './pages/Privacy';
+import Profile from './pages/Profile';
 import UpdatePrompt from './components/UpdatePrompt';
 import InstallPrompt from './components/InstallPrompt';
 import FloatingTimer from './components/FloatingTimer';
@@ -42,6 +43,7 @@ function App() {
           <Route path="photos" element={<ProgressPhotos />} />
           <Route path="about" element={<About />} />
           <Route path="privacy" element={<Privacy />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
         <Route path="/workout/:workoutId" element={<ActiveWorkout />} />
         <Route path="/log-past" element={<LogPastWorkout />} />
