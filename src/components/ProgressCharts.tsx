@@ -35,6 +35,7 @@ const EFFORT_LABEL_KEY: Record<string, string> = {
 const MINT = '#16c79a';
 const CORAL = '#ff8a80';
 const LAVENDER = '#b9a7f0';
+const SKY = '#6cc8ff';
 const GRID = '#e2eae7';
 
 // Keep time-series charts readable — show the most recent N sessions.
@@ -307,6 +308,39 @@ export function VolumeChart({ stats }: { stats: SessionStat[] }) {
   return (
     <ChartCard title={t('volumeTitle')} subtitle={t('volumeSubtitle')}>
       <TimeSeriesBars stats={stats} dataKey="volume" color={MINT} unit="kg" label={t('legendWeight')} locale={localeFor(lang)} />
+    </ChartCard>
+  );
+}
+
+/** Total duration of each workout. Bars are in minutes; labels/tooltip show the
+ *  friendly "1h 20m" form. */
+export function DurationChart({ stats }: { stats: SessionStat[] }) {
+  const t = useT(progressChartsStrings);
+  const hasDuration = stats.some(s => s.durationSec > 0);
+  if (!hasDuration) return null;
+  // Carry durationSec alongside a rounded-minutes value used for the bar height.
+  const { data } = recent(stats.map(s => ({ ...s, minutes: Math.round(s.durationSec / 60) })));
+  return (
+    <ChartCard title={t('durationTitle')} subtitle={t('durationSubtitle')}>
+      <ResponsiveContainer width="100%" height={190}>
+        <BarChart data={data} margin={{ top: 18, right: 6, left: -14, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+          <XAxis dataKey="dateLabel" tick={{ fontSize: 11 }} />
+          <YAxis tick={{ fontSize: 11 }} width={38} unit="m" />
+          <Tooltip
+            contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
+            formatter={(_value: any, _n: any, item: any) => [formatDuration(item?.payload?.durationSec ?? 0), t('legendDuration')]}
+          />
+          <Bar dataKey="minutes" fill={SKY} radius={[6, 6, 0, 0]} maxBarSize={42}>
+            <LabelList
+              dataKey="durationSec"
+              position="top"
+              formatter={(v: any) => formatDuration(Number(v))}
+              style={{ fontSize: 10, fontWeight: 700, fill: 'var(--gray-500)' }}
+            />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </ChartCard>
   );
 }

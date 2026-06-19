@@ -32,6 +32,11 @@ export const progressChartsStrings: Strings = {
     volumeSubtitle: 'Total kilograms you lifted in each workout (weight × reps, added up).',
     legendWeight: 'Weight',
 
+    // Duration chart
+    durationTitle: 'Workout duration',
+    durationSubtitle: 'How long each workout took, by day.',
+    legendDuration: 'Duration',
+
     // Reps chart
     repsTitle: 'Repetitions each workout',
     repsSubtitle: 'Total reps across all exercises.',
@@ -76,6 +81,11 @@ export const progressChartsStrings: Strings = {
     volumeSubtitle: 'Chilogrammi totali sollevati in ogni allenamento (peso × ripetizioni, sommati).',
     legendWeight: 'Peso',
 
+    // Duration chart
+    durationTitle: 'Durata allenamento',
+    durationSubtitle: 'Quanto è durato ogni allenamento, per giorno.',
+    legendDuration: 'Durata',
+
     // Reps chart
     repsTitle: 'Ripetizioni per allenamento',
     repsSubtitle: 'Ripetizioni totali su tutti gli esercizi.',
@@ -119,6 +129,11 @@ export const progressChartsStrings: Strings = {
     volumeTitle: 'Poids total soulevé',
     volumeSubtitle: 'Kilogrammes totaux soulevés à chaque séance (poids × répétitions, additionnés).',
     legendWeight: 'Poids',
+
+    // Duration chart
+    durationTitle: 'Durée de la séance',
+    durationSubtitle: 'Combien de temps a duré chaque séance, par jour.',
+    legendDuration: 'Durée',
 
     // Reps chart
     repsTitle: 'Répétitions par séance',
