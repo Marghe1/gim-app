@@ -49,7 +49,9 @@ export default function About() {
         flexDirection: 'column',
         alignItems: 'center',
         textAlign: 'center',
-        padding: 32,
+        paddingLeft: 32,
+        paddingRight: 32,
+        paddingTop: 32,
       }}
     >
       <div
@@ -77,8 +79,8 @@ export default function About() {
           marginBottom: 24,
         }}
       >
-        This little app was born on a cloudy winter afternoon in Brussels, made with love by two
-        people cuddled up on the sofa.
+        My very first app, made by me, Margherita, in Brussels. Built with curiosity, a lot of
+        patience and even more love.
       </p>
 
       <div
@@ -92,7 +94,7 @@ export default function About() {
       >
         <span>Made with</span>
         <Heart size={14} style={{ color: '#ec4899', fill: '#ec4899' }} />
-        <span>in Brussels</span>
+        <span>by Margherita in Brussels</span>
       </div>
 
       {/* Backup & restore */}
