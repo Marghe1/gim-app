@@ -135,6 +135,7 @@ export type WorkoutLog = {
   date: string;
   duration: number;
   exercises: ExerciseLog[];
+  emoji?: string;              // Optional mood / reaction emoji for the whole session
   notes?: string;
   completed: boolean;
 };

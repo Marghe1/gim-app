@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Calendar, Timer, ChevronDown, ChevronUp, Trash2, MessageSquare, Plus, Pencil } from 'lucide-react';
+import { Clock, Calendar, Timer, ChevronDown, ChevronUp, Trash2, MessageSquare, Plus, Pencil, Smile, X } from 'lucide-react';
 import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, deleteWorkoutLog, saveWorkoutLog, getTimedExerciseIds, formatCount, formatDuration } from '../utils/storage';
 import PageHero from '../components/PageHero';
@@ -12,6 +12,9 @@ import { translateExercise, localeFor } from '../i18n/data';
 // a specific exercise note (exIndex = position in the log's exercises array).
 type EditTarget = { logId: string; exIndex: number | null };
 
+// Quick-pick mood emojis for a workout (you can also type any other).
+const EMOJI_PRESETS = ['💪', '🔥', '😊', '😎', '🥳', '😅', '😓', '🥵', '😴', '🤕', '🎉', '❤️'];
+
 export default function History() {
   const navigate = useNavigate();
   const t = useT(historyStrings);
@@ -20,6 +23,9 @@ export default function History() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
   const [editText, setEditText] = useState('');
+  // Workout whose emoji is being picked (its id), plus the custom-entry text.
+  const [emojiLogId, setEmojiLogId] = useState<string | null>(null);
+  const [emojiText, setEmojiText] = useState('');
   const [timedIds] = useState<Set<string>>(() => getTimedExerciseIds());
 
   useEffect(() => {
@@ -67,6 +73,20 @@ export default function History() {
     saveWorkoutLog(updated);
     setEditing(null);
     loadLogs();
+  }
+
+  function openEmojiPicker(log: WorkoutLog) {
+    setEmojiLogId(log.id);
+    setEmojiText(log.emoji || '');
+  }
+
+  function setEmoji(logId: string, emoji: string | undefined) {
+    const log = logs.find(l => l.id === logId);
+    if (log) {
+      saveWorkoutLog({ ...log, emoji: emoji || undefined });
+      loadLogs();
+    }
+    setEmojiLogId(null);
   }
 
   function formatDate(dateString: string): string {
@@ -145,7 +165,10 @@ export default function History() {
                     onClick={() => toggleExpand(log.id)}
                   >
                     <div>
-                      <div style={{ fontWeight: 600 }}>{log.workoutName}</div>
+                      <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {log.emoji && <span style={{ fontSize: 20 }}>{log.emoji}</span>}
+                        {log.workoutName}
+                      </div>
                       <div style={{ fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <Timer size={14} />
@@ -160,6 +183,13 @@ export default function History() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        className="btn btn-ghost"
+                        title={t('setEmoji')}
+                        onClick={(e) => { e.stopPropagation(); openEmojiPicker(log); }}
+                      >
+                        {log.emoji ? <span style={{ fontSize: 18 }}>{log.emoji}</span> : <Smile size={18} />}
+                      </button>
                       <button
                         className="btn btn-ghost"
                         title={t('edit')}
@@ -270,6 +300,72 @@ export default function History() {
               ))}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Emoji picker modal */}
+      {emojiLogId && (
+        <div
+          className="modal-overlay"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          onClick={() => setEmojiLogId(null)}
+        >
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 360 }}>
+            <div className="modal-header">
+              <h2 className="modal-title">{t('emojiTitle')}</h2>
+              <button className="btn btn-ghost" onClick={() => setEmojiLogId(null)} aria-label={t('cancel')}>
+                <X size={22} />
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(6, 1fr)',
+                gap: 8,
+                marginBottom: 16,
+              }}
+            >
+              {EMOJI_PRESETS.map(e => (
+                <button
+                  key={e}
+                  onClick={() => setEmoji(emojiLogId, e)}
+                  style={{
+                    fontSize: 26,
+                    padding: 8,
+                    border: '1px solid var(--gray-200)',
+                    borderRadius: 12,
+                    background: 'white',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+
+            <label className="form-label">{t('emojiCustom')}</label>
+            <input
+              type="text"
+              className="form-input"
+              value={emojiText}
+              onChange={e => setEmojiText(e.target.value)}
+              placeholder={t('emojiPlaceholder')}
+              style={{ textAlign: 'center', fontSize: 22 }}
+            />
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button className="btn btn-ghost" onClick={() => setEmoji(emojiLogId, undefined)}>
+                {t('emojiRemove')}
+              </button>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setEmojiLogId(null)}>
+                {t('cancel')}
+              </button>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setEmoji(emojiLogId, emojiText.trim())}>
+                {t('save')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
