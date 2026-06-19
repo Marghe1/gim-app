@@ -50,6 +50,11 @@ export default function BodyMeasurements({
   const { lang } = useLang();
   const locale = localeFor(lang);
   const [editing, setEditing] = useState<Measurement | null>(null);
+  // Local string state so decimals (e.g. 72.5) can be typed in the weight field.
+  const [weightInput, setWeightInput] = useState(profile.weightKg != null ? String(profile.weightKg) : '');
+
+  // Live BMI from the details (height + current weight) shown in the card and hero.
+  const profileBmi = computeBmi(profile.weightKg, profile.heightCm);
 
   const dateLabel = (iso: string) =>
     new Date(iso + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'short' });
@@ -111,6 +116,33 @@ export default function BodyMeasurements({
             />
           </div>
         </div>
+
+        <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label className="form-label">{t('weightKg')}</label>
+            <input
+              type="number"
+              inputMode="decimal"
+              className="form-input"
+              value={weightInput}
+              onChange={e => {
+                setWeightInput(e.target.value);
+                onSaveProfile({ ...profile, weightKg: e.target.value ? Number(e.target.value) : undefined });
+              }}
+              placeholder="—"
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="form-label">{t('bmi')}</label>
+            <div
+              className="form-input"
+              style={{ background: 'var(--gray-100)', display: 'flex', alignItems: 'center', fontWeight: 700, color: 'var(--primary-dark)' }}
+            >
+              {profileBmi != null ? profileBmi : '—'}
+            </div>
+          </div>
+        </div>
+
         <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 8 }}>{t('bmiHint')}</p>
       </div>
 

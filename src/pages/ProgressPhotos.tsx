@@ -117,8 +117,9 @@ export default function ProgressPhotos() {
     refresh();
   }
 
-  const latestM = measurements[measurements.length - 1];
-  const latestBmi = latestM ? computeBmi(latestM.weightKg, bodyProfile.heightCm) : null;
+  // Hero weight: prefer the weight from "Your details", else the latest logged measurement.
+  const heroWeightKg = bodyProfile.weightKg ?? measurements[measurements.length - 1]?.weightKg;
+  const heroBmi = computeBmi(heroWeightKg, bodyProfile.heightCm);
 
   return (
     <div className="home">
@@ -128,8 +129,8 @@ export default function ProgressPhotos() {
         stats={
           section === 'body'
             ? [
-                { value: latestM?.weightKg != null ? `${latestM.weightKg}` : '—', label: t('heroWeight') },
-                { value: latestBmi != null ? `${latestBmi}` : '—', label: t('heroBmi') },
+                { value: heroWeightKg != null ? `${heroWeightKg}` : '—', label: t('heroWeight') },
+                { value: heroBmi != null ? `${heroBmi}` : '—', label: t('heroBmi') },
               ]
             : [
                 { value: photos.length, label: photos.length === 1 ? t('photoSingular') : t('photoPlural') },

@@ -9,6 +9,7 @@ export type Sex = 'female' | 'male';
 export interface BodyProfile {
   sex?: Sex;
   heightCm?: number;
+  weightKg?: number; // current weight, for the quick BMI snapshot in the hero
 }
 
 export interface Measurement {
