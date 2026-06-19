@@ -200,7 +200,7 @@ export default function Workouts() {
       <div className="home">
         <PageHero
           eyebrow="Your circuit templates"
-          title="My Workouts"
+          title="Workouts"
           stats={[
             { value: workouts.length, label: workouts.length === 1 ? 'saved template' : 'saved templates' },
             { value: totalExercises, label: 'exercises in total' },
