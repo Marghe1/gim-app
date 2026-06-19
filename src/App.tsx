@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Exercises from './pages/Exercises';
@@ -13,11 +13,19 @@ import About from './pages/About';
 import UpdatePrompt from './components/UpdatePrompt';
 import FloatingTimer from './components/FloatingTimer';
 
+// The manual timer is only useful while working out, so show it only on the
+// workouts list and the active workout session — not across the whole app.
+function WorkoutTimer() {
+  const { pathname } = useLocation();
+  const onWorkoutPage = pathname === '/workouts' || pathname.startsWith('/workout/');
+  return onWorkoutPage ? <FloatingTimer /> : null;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <UpdatePrompt />
-      <FloatingTimer />
+      <WorkoutTimer />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
