@@ -25,7 +25,7 @@ export default defineConfig({
         name: 'GymApp - Workout Tracker',
         short_name: 'GymApp',
         description: 'Track your circuit training workouts and progress',
-        theme_color: '#6366f1',
+        theme_color: '#16c79a',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',

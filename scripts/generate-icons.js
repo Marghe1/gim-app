@@ -9,7 +9,7 @@ const publicDir = join(__dirname, '..', 'public');
 // Simple icon SVG with dumbbell
 const iconSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="102" fill="#6366f1"/>
+  <rect width="512" height="512" rx="102" fill="#16c79a"/>
   <g fill="white">
     <rect x="76" y="204" width="360" height="104" rx="20"/>
     <rect x="128" y="153" width="52" height="206" rx="16"/>
