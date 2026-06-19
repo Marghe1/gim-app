@@ -7,7 +7,7 @@
 // ===========================================================================
 // Where "Send feedback" emails go. A mailto: address is visible to anyone who
 // opens the link, so consider a dedicated address rather than a personal one.
-export const FEEDBACK_EMAIL = 'your.email@example.com';
+export const FEEDBACK_EMAIL = 'mbruscolini@protonmail.com';
 // The public address people are sent to when they share the app.
 export const APP_URL = 'https://the-gym-app.netlify.app';
 // ===========================================================================
