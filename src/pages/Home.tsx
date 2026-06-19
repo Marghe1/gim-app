@@ -11,6 +11,7 @@ import {
   Download,
   Upload,
   Settings,
+  Flame,
 } from 'lucide-react';
 import { getWorkouts, getWorkoutLogs, getSchedule, localDateKey } from '../utils/storage';
 import { getUserProfile } from '../utils/profileStorage';
@@ -55,6 +56,24 @@ export default function Home() {
     const logDate = new Date(log.date);
     return logDate >= startOfWeek && log.completed;
   }).length;
+
+  // Week streak: consecutive weeks (up to this one) with at least one completed workout.
+  const completedWeeks = new Set(
+    logs.filter(l => l.completed).map(l => {
+      const s = new Date(l.date);
+      s.setDate(s.getDate() - s.getDay());
+      s.setHours(0, 0, 0, 0);
+      return s.getTime();
+    })
+  );
+  let streak = 0;
+  const streakCursor = new Date(startOfWeek);
+  // Don't break the streak just because this week hasn't started yet.
+  if (!completedWeeks.has(streakCursor.getTime())) streakCursor.setDate(streakCursor.getDate() - 7);
+  while (completedWeeks.has(streakCursor.getTime())) {
+    streak++;
+    streakCursor.setDate(streakCursor.getDate() - 7);
+  }
 
   // Use the shared, COMPLETE backup (utils/backup.ts) so the file contains
   // everything — workouts, body measures, profile, settings AND the Glow Up
@@ -103,7 +122,15 @@ export default function Home() {
         }
         stats={[
           { value: workoutsThisWeek, label: t('statWorkoutsThisWeek') },
-          { value: workouts.length, label: t('statSavedTemplates') },
+          {
+            value: (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {streak > 0 && <Flame size={24} />}
+                {streak}
+              </span>
+            ),
+            label: streak === 1 ? t('statWeekStreak') : t('statWeeksStreak'),
+          },
         ]}
       />
 

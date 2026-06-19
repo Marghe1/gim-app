@@ -166,10 +166,14 @@ const exercises: Record<string, Pair> = {
   'Dynamic Stretching': { it: 'Stretching dinamico', fr: 'Étirements dynamiques' },
   'Cardio Cool-down': { it: 'Defaticamento cardio', fr: 'Retour au calme cardio' },
   'Full Body Stretching': { it: 'Stretching total body', fr: 'Étirements corps entier' },
+  Bike: { it: 'Cyclette', fr: 'Vélo' },
+  Yoga: { it: 'Yoga', fr: 'Yoga' },
+  Pilates: { it: 'Pilates', fr: 'Pilates' },
 };
 
 const categories: Record<string, Pair> = {
   'PT Sessions': { it: 'Sessioni PT', fr: 'Séances PT' },
+  'Cardio & Wellness': { it: 'Cardio e benessere', fr: 'Cardio et bien-être' },
 };
 
 const templateNames: Record<string, Pair> = {
@@ -199,6 +203,9 @@ const templateNames: Record<string, Pair> = {
     it: 'Sessione C2 - Unilaterale basso & alto',
     fr: 'Séance C2 - Unilatéral bas & haut',
   },
+  'Bike Run': { it: 'Giro in bici', fr: 'Sortie à vélo' },
+  'Yoga Practice': { it: 'Sessione di yoga', fr: 'Séance de yoga' },
+  'Pilates Practice': { it: 'Sessione di pilates', fr: 'Séance de pilates' },
 };
 
 const templateDescriptions: Record<string, Pair> = {
@@ -233,6 +240,18 @@ const templateDescriptions: Record<string, Pair> = {
   'PT session: core, single-leg balance and strength, plus upper body pull and press': {
     it: 'Sessione PT: core, equilibrio e forza su una gamba, più tirata e spinta per la parte alta',
     fr: 'Séance PT : core, équilibre et force sur une jambe, plus tirage et poussée du haut du corps',
+  },
+  'A 30-minute ride on the bike': {
+    it: 'Una pedalata di 30 minuti',
+    fr: 'Une sortie de 30 minutes à vélo',
+  },
+  'A 30-minute yoga session': {
+    it: 'Una sessione di yoga di 30 minuti',
+    fr: 'Une séance de yoga de 30 minutes',
+  },
+  'A 30-minute pilates session': {
+    it: 'Una sessione di pilates di 30 minuti',
+    fr: 'Une séance de pilates de 30 minutes',
   },
 };
 
