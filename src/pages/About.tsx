@@ -100,10 +100,10 @@ export default function About() {
       <div className="card" style={{ width: '100%', maxWidth: 360, marginTop: 32, textAlign: 'left' }}>
         <div className="card-header">
           <div className="card-title">Backup &amp; restore</div>
-          <div className="card-subtitle">
-            Saves your workouts and photos into one file. Use it to move to a new phone or recover
-            your data.
-          </div>
+        </div>
+        <div className="card-subtitle" style={{ marginBottom: 16 }}>
+          Saves your workouts and photos into one file. Use it to move to a new phone or recover
+          your data.
         </div>
 
         <input
