@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, Trophy, Flame, CalendarDays, ChevronLeft, ChevronRight, Download, FileSpreadsheet } from 'lucide-react';
+import { TrendingUp, Trophy, Flame, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Download, FileSpreadsheet } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/storage';
@@ -38,6 +38,7 @@ export default function Progress() {
   const [weeklyStats, setWeeklyStats] = useState({ thisWeek: 0, lastWeek: 0, total: 0 });
   const [totalVolume, setTotalVolume] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [showRecords, setShowRecords] = useState(false);
 
   useEffect(() => {
     const allLogs = getWorkoutLogs().filter(l => l.completed);
@@ -256,14 +257,34 @@ export default function Progress() {
             </div>
           )}
 
-          {/* Personal Records */}
+          {/* Personal Records (collapsed by default — tap to expand) */}
           {exerciseProgress.length > 0 && (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <button
+                onClick={() => setShowRecords(o => !o)}
+                aria-expanded={showRecords}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: '100%',
+                  marginBottom: showRecords ? 12 : 0,
+                  padding: 0,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'inherit',
+                }}
+              >
                 <Trophy size={18} style={{ color: '#f59e0b' }} />
                 <h3 style={{ fontSize: 16, fontWeight: 600 }}>{t('personalRecords')}</h3>
-              </div>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>({exerciseProgress.length})</span>
+                <span style={{ marginLeft: 'auto', display: 'inline-flex', color: '#6b7280' }}>
+                  {showRecords ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </span>
+              </button>
 
+              {showRecords && (
               <div className="list">
                 {exerciseProgress.map(record => (
                   <div key={record.id} className="list-item">
@@ -289,6 +310,7 @@ export default function Progress() {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
         </>
