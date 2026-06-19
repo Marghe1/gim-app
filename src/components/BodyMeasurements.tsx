@@ -14,7 +14,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { BodyProfile, Measurement, Sex } from '../utils/bodyStorage';
-import { computeBmi, bmiCategory } from '../utils/bodyStorage';
+import { computeBmi } from '../utils/bodyStorage';
 import { useT, useLang } from '../i18n/context';
 import { bodyStrings } from '../i18n/strings/body';
 import { localeFor } from '../i18n/data';
@@ -53,12 +53,6 @@ export default function BodyMeasurements({
 
   const dateLabel = (iso: string) =>
     new Date(iso + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-
-  const catLabel = (c: string) =>
-    t(`cat${c.charAt(0).toUpperCase()}${c.slice(1)}`);
-
-  const latest = measurements[measurements.length - 1];
-  const latestBmi = latest ? computeBmi(latest.weightKg, profile.heightCm) : null;
 
   // Chart data
   const weightBmiData = measurements
@@ -132,28 +126,6 @@ export default function BodyMeasurements({
         </div>
       ) : (
         <>
-          {/* Latest snapshot */}
-          {latest && (
-            <div className="card">
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
-                {t('latestTitle')} · {dateLabel(latest.date)}
-              </h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 13 }}>
-                {latest.weightKg != null && <Pill label={t('legendWeight')} value={`${latest.weightKg} kg`} />}
-                {latestBmi != null && (
-                  <Pill label={t('bmi')} value={`${latestBmi} · ${catLabel(bmiCategory(latestBmi))}`} />
-                )}
-                {latest.waistCm != null && <Pill label={t('legendWaist')} value={`${latest.waistCm} cm`} />}
-                {latest.hipsCm != null && <Pill label={t('legendHips')} value={`${latest.hipsCm} cm`} />}
-                {latest.thighCm != null && <Pill label={t('legendThigh')} value={`${latest.thighCm} cm`} />}
-                {latest.tricepsCm != null && <Pill label={t('legendTriceps')} value={`${latest.tricepsCm} cm`} />}
-              </div>
-              {latestBmi == null && latest.weightKg != null && (
-                <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 8 }}>{t('bmiNeedHeight')}</p>
-              )}
-            </div>
-          )}
-
           {/* Weight (line) + BMI (bars) */}
           <ChartCard title={t('weightBmiTitle')} subtitle={t('weightBmiSubtitle')}>
             {weightBmiData.length < 2 ? (
@@ -245,15 +217,6 @@ export default function BodyMeasurements({
         />
       )}
     </div>
-  );
-}
-
-function Pill({ label, value }: { label: string; value: string }) {
-  return (
-    <span style={{ background: 'var(--mint-wash)', border: '1px solid var(--mint-soft)', borderRadius: 999, padding: '5px 12px', fontWeight: 600 }}>
-      <span style={{ color: 'var(--gray-500)', fontWeight: 500 }}>{label}: </span>
-      {value}
-    </span>
   );
 }
 
