@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, Play, X, Wand2, Trash2 } from 'lucide-react';
 import type { Workout, WorkoutSchedule } from '../utils/storage';
 import { getWorkouts, getSchedule, saveSchedule, localDateKey } from '../utils/storage';
+import PageHero from '../components/PageHero';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_LABELS = [
@@ -111,13 +112,20 @@ export default function Plan() {
     return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
-  return (
-    <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Plan</h1>
-        <p className="page-subtitle">Schedule your sessions ahead</p>
-      </div>
+  const upcomingCount = Object.keys(schedule).filter(k => k >= todayKey).length;
 
+  return (
+    <div className="home">
+      <PageHero
+        eyebrow="Schedule your sessions ahead"
+        title="Plan"
+        stats={[
+          { value: upcomingCount, label: 'upcoming sessions' },
+          { value: workouts.length, label: workouts.length === 1 ? 'workout saved' : 'workouts saved' },
+        ]}
+      />
+
+      <main className="home-sheet">
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <button className="btn btn-primary" style={{ flex: 1 }} onClick={autoPlan}>
           <Wand2 size={18} />
@@ -295,6 +303,7 @@ export default function Plan() {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }

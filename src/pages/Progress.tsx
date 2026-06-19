@@ -3,6 +3,7 @@ import { TrendingUp, Trophy, Flame, CalendarDays, ChevronLeft, ChevronRight } fr
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/storage';
+import PageHero from '../components/PageHero';
 
 type Metric = 'weight' | 'reps' | 'time';
 
@@ -125,12 +126,31 @@ export default function Progress() {
   const weekDelta = weeklyStats.thisWeek - weeklyStats.lastWeek;
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Progress</h1>
-        <p className="page-subtitle">Track your improvement over time</p>
-      </div>
+    <div className="home">
+      <PageHero
+        eyebrow={
+          weeklyStats.lastWeek > 0
+            ? `${weekDelta > 0 ? '↑' : weekDelta < 0 ? '↓' : '='} ${weekDelta === 0 ? 'same as' : `${Math.abs(weekDelta)} vs`} last week`
+            : 'Your improvement over time'
+        }
+        title="Progress"
+        stats={[
+          { value: weeklyStats.thisWeek, label: 'this week' },
+          {
+            value: (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {streak > 0 && <Flame size={24} />}
+                {streak}
+              </span>
+            ),
+            label: streak === 1 ? 'week streak' : 'weeks streak',
+          },
+          { value: weeklyStats.total, label: 'total workouts' },
+          { value: totalVolume.toLocaleString('en-GB'), label: 'total volume (kg)' },
+        ]}
+      />
 
+      <main className="home-sheet">
       {logs.length === 0 ? (
         <div className="empty-state">
           <TrendingUp size={64} />
@@ -139,39 +159,6 @@ export default function Progress() {
         </div>
       ) : (
         <>
-          {/* Summary stats */}
-          <div className="stats-grid" style={{ marginBottom: 24 }}>
-            <div className="stat-card">
-              <div className="stat-value">{weeklyStats.thisWeek}</div>
-              <div className="stat-label">This week</div>
-              {weeklyStats.lastWeek > 0 && (
-                <div style={{
-                  fontSize: 12,
-                  marginTop: 4,
-                  fontWeight: 600,
-                  color: weekDelta > 0 ? '#16a34a' : weekDelta < 0 ? '#dc2626' : '#6b7280',
-                }}>
-                  {weekDelta > 0 ? '↑' : weekDelta < 0 ? '↓' : '='} {weekDelta === 0 ? 'same as' : `${Math.abs(weekDelta)} vs`} last week
-                </div>
-              )}
-            </div>
-            <div className="stat-card">
-              <div className="stat-value" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                {streak > 0 && <Flame size={22} style={{ color: '#f97316' }} />}
-                {streak}
-              </div>
-              <div className="stat-label">{streak === 1 ? 'Week streak' : 'Weeks streak'}</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{weeklyStats.total}</div>
-              <div className="stat-label">Total workouts</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{totalVolume.toLocaleString('en-GB')}</div>
-              <div className="stat-label">Total volume (kg)</div>
-            </div>
-          </div>
-
           {/* Workout calendar */}
           <WorkoutCalendar logs={logs} />
 
@@ -257,6 +244,7 @@ export default function Progress() {
           )}
         </>
       )}
+      </main>
     </div>
   );
 }

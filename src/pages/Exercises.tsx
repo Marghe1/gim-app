@@ -4,6 +4,7 @@ import { Search, Plus, Pencil, Trash2, X, ChevronRight, Sliders, Check } from 'l
 import { v4 as uuid } from 'uuid';
 import type { Exercise } from '../utils/storage';
 import { getExercises, saveExercise, deleteExercise } from '../utils/storage';
+import PageHero from '../components/PageHero';
 
 const MUSCLE_GROUPS = ['All', 'Legs', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core', 'Full Body', 'Warm-up', 'Stretching', 'Glutes', 'Cardio', 'Plyometrics'];
 
@@ -145,14 +146,20 @@ export default function Exercises() {
 
   // Count exercises that will get weights
   const exercisesWithWeights = Object.values(previewWeights).filter(w => w > 0).length;
+  const muscleGroupCount = new Set(exercises.map(e => e.muscleGroup)).size;
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Exercises</h1>
-        <p className="page-subtitle">Manage your exercise library</p>
-      </div>
+    <div className="home">
+      <PageHero
+        eyebrow="Your exercise library"
+        title="Exercises"
+        stats={[
+          { value: exercises.length, label: exercises.length === 1 ? 'exercise' : 'exercises' },
+          { value: muscleGroupCount, label: 'muscle groups' },
+        ]}
+      />
 
+      <main className="home-sheet">
       {/* Quick Setup Panel */}
       {showQuickSetup ? (
         <div style={{
@@ -425,6 +432,7 @@ export default function Exercises() {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }

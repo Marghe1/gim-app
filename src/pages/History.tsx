@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Clock, Calendar, Timer, ChevronDown, ChevronUp, Trash2, MessageSquare, Plus } from 'lucide-react';
 import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, deleteWorkoutLog, saveWorkoutLog, getTimedExerciseIds, formatCount, formatDuration } from '../utils/storage';
+import PageHero from '../components/PageHero';
 
 // Which note is currently being edited: a workout-level note (exIndex null) or
 // a specific exercise note (exIndex = position in the log's exercises array).
@@ -93,13 +94,20 @@ export default function History() {
     groupedLogs[dateKey].push(log);
   });
 
-  return (
-    <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">History</h1>
-        <p className="page-subtitle">View your past workouts</p>
-      </div>
+  const totalDuration = logs.reduce((sum, l) => sum + (l.duration || 0), 0);
 
+  return (
+    <div className="home">
+      <PageHero
+        eyebrow="Your past workouts"
+        title="History"
+        stats={[
+          { value: logs.length, label: logs.length === 1 ? 'workout logged' : 'workouts logged' },
+          { value: formatDuration(totalDuration), label: 'total time' },
+        ]}
+      />
+
+      <main className="home-sheet">
       {logs.length === 0 ? (
         <div className="empty-state">
           <Clock size={64} />
@@ -289,6 +297,7 @@ export default function History() {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Plus, Trash2, X, GripVertical, Play, Pencil, ChevronDown, ChevronRight,
 import { v4 as uuid } from 'uuid';
 import type { Workout, WorkoutExercise, Exercise, WorkoutTemplate } from '../utils/storage';
 import { getWorkouts, saveWorkout, deleteWorkout, getExercises, getWorkoutTemplates, getTimedExerciseIds, getExerciseGroups, formatCount } from '../utils/storage';
+import PageHero from '../components/PageHero';
 
 export default function Workouts() {
   const navigate = useNavigate();
@@ -194,13 +195,19 @@ export default function Workouts() {
 
   // Main list view
   if (!showForm) {
+    const totalExercises = workouts.reduce((sum, w) => sum + w.exercises.length, 0);
     return (
-      <div className="page">
-        <div className="page-header">
-          <h1 className="page-title">My Workouts</h1>
-          <p className="page-subtitle">Create and manage workout templates</p>
-        </div>
+      <div className="home">
+        <PageHero
+          eyebrow="Your circuit templates"
+          title="My Workouts"
+          stats={[
+            { value: workouts.length, label: workouts.length === 1 ? 'saved template' : 'saved templates' },
+            { value: totalExercises, label: 'exercises in total' },
+          ]}
+        />
 
+        <main className="home-sheet">
         <button className="btn btn-primary btn-block" onClick={openNewForm} style={{ marginBottom: 16 }}>
           <Plus size={20} />
           Create Workout
@@ -238,6 +245,7 @@ export default function Workouts() {
             ))}
           </div>
         )}
+        </main>
       </div>
     );
   }

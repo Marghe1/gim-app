@@ -8,6 +8,7 @@ import {
   deletePhoto,
   formatBytes,
 } from '../utils/photoStorage';
+import PageHero from '../components/PageHero';
 
 const POSE_LABEL: Record<PhotoPose, string> = {
   front: 'Front',
@@ -86,30 +87,25 @@ export default function ProgressPhotos() {
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Progress Photos</h1>
-        <p className="page-subtitle">Track how you change over time</p>
-      </div>
+    <div className="home">
+      <PageHero
+        eyebrow="See how you change over time"
+        title="Progress Photos"
+        stats={[
+          { value: photos.length, label: photos.length === 1 ? 'photo' : 'photos' },
+          {
+            value: (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <HardDrive size={20} />
+                {formatBytes(totalBytes)}
+              </span>
+            ),
+            label: 'used on this device',
+          },
+        ]}
+      />
 
-      {/* Storage meter */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          fontSize: 13,
-          color: 'var(--gray-500)',
-          marginBottom: 16,
-        }}
-      >
-        <HardDrive size={15} />
-        <span>
-          Photos using <strong>{formatBytes(totalBytes)}</strong> on this device
-          {photos.length > 0 && ` · ${photos.length} photo${photos.length === 1 ? '' : 's'}`}
-        </span>
-      </div>
-
+      <main className="home-sheet">
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setShowAdd(true)}>
           <Plus size={18} /> Add photo
@@ -242,6 +238,7 @@ export default function ProgressPhotos() {
           onDelete={() => handleDelete(viewing.id)}
         />
       )}
+      </main>
     </div>
   );
 }
