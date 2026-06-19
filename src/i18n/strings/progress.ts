@@ -3,7 +3,7 @@ import type { Strings } from '../context';
 export const progressStrings: Strings = {
   en: {
     title: 'Progress',
-    eyebrowDefault: 'Keep up the great work, Margherita! 💪',
+    eyebrowDefault: 'Monitor your progress with time',
     eyebrowSame: '= same as last week',
     eyebrowUp: '↑ {n} vs last week',
     eyebrowDown: '↓ {n} vs last week',
@@ -45,7 +45,7 @@ export const progressStrings: Strings = {
   },
   it: {
     title: 'Progressi',
-    eyebrowDefault: 'Continua così, Margherita! 💪',
+    eyebrowDefault: 'Monitora i tuoi progressi nel tempo',
     eyebrowSame: '= come la settimana scorsa',
     eyebrowUp: '↑ {n} rispetto alla settimana scorsa',
     eyebrowDown: '↓ {n} rispetto alla settimana scorsa',
@@ -87,7 +87,7 @@ export const progressStrings: Strings = {
   },
   fr: {
     title: 'Progression',
-    eyebrowDefault: 'Continue comme ça, Margherita ! 💪',
+    eyebrowDefault: 'Suivez vos progrès au fil du temps',
     eyebrowSame: '= comme la semaine dernière',
     eyebrowUp: '↑ {n} vs semaine dernière',
     eyebrowDown: '↓ {n} vs semaine dernière',
