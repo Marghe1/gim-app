@@ -46,6 +46,7 @@ export default function About() {
           workouts: s.workouts,
           logs: s.logs,
           exercises: s.exercises,
+          measurements: s.measurements,
           photos: s.photos,
         })
       );

@@ -8,9 +8,12 @@
 import type { ProgressPhoto } from './photoStorage';
 import { getAllPhotos, putPhoto } from './photoStorage';
 
-// localStorage keys to back up. Kept here (rather than imported) so the backup
-// format is explicit and stable even if storage.ts internals change.
-const LOCAL_KEYS = ['gymtrack_workouts', 'gymtrack_workout_logs', 'gymtrack_exercises', 'gymtrack_schedule', 'gymtrack_body_profile', 'gymtrack_measurements', 'gymtrack_user_profile', 'gymtrack_week_plan'];
+// Every localStorage key the app owns uses this prefix. Backing up ALL keys
+// with it guarantees the file contains every piece of data — workouts, body
+// measurements, profile, settings — now and for any feature added later, with
+// no list to keep in sync. (Progress photos live in IndexedDB and are bundled
+// separately below.)
+const BACKUP_PREFIX = 'gymtrack_';
 
 const BACKUP_VERSION = 1;
 
@@ -50,7 +53,9 @@ function base64ToBlob(base64: string, mime: string): Blob {
 // Build the backup object (also used by tests / sharing if ever needed).
 async function buildBackup(): Promise<BackupFile> {
   const local: Record<string, unknown> = {};
-  for (const key of LOCAL_KEYS) {
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith(BACKUP_PREFIX)) continue;
     const raw = localStorage.getItem(key);
     if (raw != null) {
       try {
@@ -102,7 +107,7 @@ export async function exportBackup(): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-export type RestoreSummary = { workouts: number; logs: number; exercises: number; photos: number };
+export type RestoreSummary = { workouts: number; logs: number; exercises: number; measurements: number; photos: number };
 
 // Restore from a backup file. Merges photos (by id) and REPLACES the workout
 // data sets. Returns a small summary for confirmation messaging.
@@ -118,11 +123,10 @@ export async function importBackup(file: File): Promise<RestoreSummary> {
     throw new Error('This file is not a valid GymApp backup.');
   }
 
-  // Restore localStorage data.
-  for (const key of LOCAL_KEYS) {
-    if (key in parsed.local) {
-      localStorage.setItem(key, JSON.stringify(parsed.local[key]));
-    }
+  // Restore localStorage data — every key in the backup that belongs to us.
+  for (const [key, value] of Object.entries(parsed.local)) {
+    if (!key.startsWith(BACKUP_PREFIX)) continue; // ignore anything foreign
+    localStorage.setItem(key, JSON.stringify(value));
   }
 
   // Restore photos into IndexedDB.
@@ -138,6 +142,7 @@ export async function importBackup(file: File): Promise<RestoreSummary> {
     workouts: arr(parsed.local['gymtrack_workouts']),
     logs: arr(parsed.local['gymtrack_workout_logs']),
     exercises: arr(parsed.local['gymtrack_exercises']),
+    measurements: arr(parsed.local['gymtrack_measurements']),
     photos: photoCount,
   };
 }

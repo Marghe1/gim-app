@@ -18,7 +18,7 @@ export const aboutStrings: Strings = {
     restoreConfirm:
       'Restore from this backup? Your current workouts will be replaced, and the photos from the backup will be added.',
     restoreDone:
-      'Restored {workouts} workouts, {logs} sessions, {exercises} exercises and {photos} photos. Reloading…',
+      'Restored {workouts} workouts, {logs} sessions, {exercises} exercises, {measurements} body entries and {photos} photos. Reloading…',
     restoreFail: 'Sorry, the backup could not be restored.',
     helpTitle: 'Help',
     showTutorial: 'Show the welcome tour again',
@@ -42,7 +42,7 @@ export const aboutStrings: Strings = {
     restoreConfirm:
       'Ripristinare da questo backup? I tuoi allenamenti attuali verranno sostituiti e le foto del backup verranno aggiunte.',
     restoreDone:
-      'Ripristinati {workouts} allenamenti, {logs} sessioni, {exercises} esercizi e {photos} foto. Ricaricamento…',
+      'Ripristinati {workouts} allenamenti, {logs} sessioni, {exercises} esercizi, {measurements} misurazioni e {photos} foto. Ricaricamento…',
     restoreFail: 'Spiacenti, non è stato possibile ripristinare il backup.',
     helpTitle: 'Aiuto',
     showTutorial: 'Rivedi il tour di benvenuto',
@@ -66,7 +66,7 @@ export const aboutStrings: Strings = {
     restoreConfirm:
       'Restaurer à partir de cette sauvegarde ? Tes séances actuelles seront remplacées et les photos de la sauvegarde seront ajoutées.',
     restoreDone:
-      'Restauré {workouts} séances, {logs} sessions, {exercises} exercices et {photos} photos. Rechargement…',
+      'Restauré {workouts} séances, {logs} sessions, {exercises} exercices, {measurements} mesures et {photos} photos. Rechargement…',
     restoreFail: 'Désolé, la sauvegarde n’a pas pu être restaurée.',
     helpTitle: 'Aide',
     showTutorial: 'Revoir le tour de bienvenue',
