@@ -88,6 +88,7 @@ export default function ActiveWorkout() {
 
   // Exercise ids that are time-based (seconds instead of reps)
   const [timedExercises, setTimedExercises] = useState<Set<string>>(new Set());
+  const [minuteExercises, setMinuteExercises] = useState<Set<string>>(new Set());
 
   // Optional per-exercise video overrides (exerciseId -> specific YouTube URL)
   const [videoOverrides, setVideoOverrides] = useState<{ [id: string]: string | undefined }>({});
@@ -115,6 +116,7 @@ export default function ActiveWorkout() {
       // Get exercise library for default weights
       const allExercises = getExercises();
       setTimedExercises(new Set(allExercises.filter(e => e.isTimed).map(e => e.id)));
+      setMinuteExercises(new Set(allExercises.filter(e => e.isTimed && e.timeUnit === 'minutes').map(e => e.id)));
       setVideoOverrides(Object.fromEntries(allExercises.map(e => [e.id, e.videoUrl])));
 
       // Load previous notes for all exercises
@@ -560,6 +562,7 @@ export default function ActiveWorkout() {
     if (!set) return null;
     const exercise = workout!.exercises[exIndex];
     const isTimed = timedExercises.has(exercise.exerciseId);
+    const isMinutes = minuteExercises.has(exercise.exerciseId);
     const prev = lastPerformance[exercise.exerciseId]?.sets[setIndex];
 
     return (
@@ -625,12 +628,12 @@ export default function ActiveWorkout() {
 
         {/* Reps / time input */}
         <div>
-          <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>{isTimed ? t('secLabel') : t('repsLabel')}</label>
+          <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 2 }}>{isTimed ? (isMinutes ? t('minLabel') : t('secLabel')) : t('repsLabel')}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <button
               className="btn btn-ghost"
               style={{ padding: 2, minWidth: 24, fontSize: 12 }}
-              onClick={() => adjustReps(exIndex, setIndex, -1)}
+              onClick={() => adjustReps(exIndex, setIndex, isMinutes ? -60 : -1)}
             >
               <Minus size={12} />
             </button>
@@ -645,13 +648,13 @@ export default function ActiveWorkout() {
                 fontWeight: 600,
                 textAlign: 'center',
               }}
-              value={set.reps}
-              onChange={e => updateSet(exIndex, setIndex, 'reps', Number(e.target.value))}
+              value={isMinutes ? set.reps / 60 : set.reps}
+              onChange={e => updateSet(exIndex, setIndex, 'reps', isMinutes ? Number(e.target.value) * 60 : Number(e.target.value))}
             />
             <button
               className="btn btn-ghost"
               style={{ padding: 2, minWidth: 24, fontSize: 12 }}
-              onClick={() => adjustReps(exIndex, setIndex, 1)}
+              onClick={() => adjustReps(exIndex, setIndex, isMinutes ? 60 : 1)}
             >
               <Plus size={12} />
             </button>

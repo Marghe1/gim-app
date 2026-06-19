@@ -7,6 +7,7 @@ export type Exercise = {
   defaultWeight?: number;      // Starting weight in kg
   weightIncrement?: number;    // How much to increase (default 2.5kg)
   isTimed?: boolean;           // Measured in seconds (holds, planks) instead of reps
+  timeUnit?: 'minutes';        // For timed exercises, enter/show the duration in minutes (bike, yoga); value is still stored in seconds
   videoUrl?: string;           // Optional specific YouTube link; otherwise we search by name
 };
 
@@ -45,6 +46,12 @@ export function formatDuration(totalSeconds: number): string {
 // Set of exercise ids that are time-based (holds, planks, balance, etc.)
 export function getTimedExerciseIds(): Set<string> {
   return new Set(getExercises().filter(e => e.isTimed).map(e => e.id));
+}
+
+// Set of timed exercise ids whose duration is entered/shown in minutes (bike,
+// yoga, pilates) rather than seconds. The value is still stored as seconds.
+export function getMinuteExerciseIds(): Set<string> {
+  return new Set(getExercises().filter(e => e.isTimed && e.timeUnit === 'minutes').map(e => e.id));
 }
 
 export type WorkoutExercise = {
@@ -272,6 +279,10 @@ const defaultExercises: Exercise[] = [
   { id: '85', name: 'Dynamic Stretching', muscleGroup: 'Warm-up', isTimed: true },
   { id: '86', name: 'Cardio Cool-down', muscleGroup: 'Cardio', isTimed: true },
   { id: '87', name: 'Full Body Stretching', muscleGroup: 'Stretching', isTimed: true },
+  // Duration-based activities, entered in minutes (stored as seconds)
+  { id: '88', name: 'Bike', muscleGroup: 'Cardio', isTimed: true, timeUnit: 'minutes' },
+  { id: '89', name: 'Yoga', muscleGroup: 'Stretching', isTimed: true, timeUnit: 'minutes' },
+  { id: '90', name: 'Pilates', muscleGroup: 'Core', isTimed: true, timeUnit: 'minutes' },
 ];
 
 export function getWorkouts(): Workout[] {
@@ -585,12 +596,57 @@ const rawWorkoutTemplates: WorkoutTemplate[] = [
   },
 ];
 
-// Wrap every template with the shared warm-up (start) and cool-down (end)
-// blocks. A stable per-template prefix keeps the inserted ids unique.
-const workoutTemplates: WorkoutTemplate[] = rawWorkoutTemplates.map(t => ({
-  ...t,
-  exercises: [...warmupBlock(t.id), ...t.exercises, ...cooldownBlock(t.id)],
-}));
+// Simple single-activity templates (cardio / wellness): one exercise each,
+// measured in minutes, with no warm-up / cool-down wrapping. 1800s = 30 min.
+const simpleTemplates: WorkoutTemplate[] = [
+  {
+    id: 'template-bike-run',
+    name: 'Bike Run',
+    description: 'A 30-minute ride on the bike',
+    isTemplate: true,
+    category: 'Cardio & Wellness',
+    exercises: [
+      { id: 'bike-1', exerciseId: '88', exerciseName: 'Bike', targetSets: 1, targetReps: 1800, restSeconds: 0 },
+    ],
+    createdAt: '2026-06-19T00:00:00.000Z',
+    updatedAt: '2026-06-19T00:00:00.000Z',
+  },
+  {
+    id: 'template-yoga-practice',
+    name: 'Yoga Practice',
+    description: 'A 30-minute yoga session',
+    isTemplate: true,
+    category: 'Cardio & Wellness',
+    exercises: [
+      { id: 'yoga-1', exerciseId: '89', exerciseName: 'Yoga', targetSets: 1, targetReps: 1800, restSeconds: 0 },
+    ],
+    createdAt: '2026-06-19T00:00:00.000Z',
+    updatedAt: '2026-06-19T00:00:00.000Z',
+  },
+  {
+    id: 'template-pilates-practice',
+    name: 'Pilates Practice',
+    description: 'A 30-minute pilates session',
+    isTemplate: true,
+    category: 'Cardio & Wellness',
+    exercises: [
+      { id: 'pilates-1', exerciseId: '90', exerciseName: 'Pilates', targetSets: 1, targetReps: 1800, restSeconds: 0 },
+    ],
+    createdAt: '2026-06-19T00:00:00.000Z',
+    updatedAt: '2026-06-19T00:00:00.000Z',
+  },
+];
+
+// Wrap every PT template with the shared warm-up (start) and cool-down (end)
+// blocks, then append the simple single-activity templates (no wrapping).
+// A stable per-template prefix keeps the inserted ids unique.
+const workoutTemplates: WorkoutTemplate[] = [
+  ...rawWorkoutTemplates.map(t => ({
+    ...t,
+    exercises: [...warmupBlock(t.id), ...t.exercises, ...cooldownBlock(t.id)],
+  })),
+  ...simpleTemplates,
+];
 
 export function getWorkoutTemplates(): WorkoutTemplate[] {
   return workoutTemplates;

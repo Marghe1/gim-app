@@ -29,10 +29,10 @@ export default function Home() {
 
   const profile = getUserProfile();
 
-  // Friendly greeting based on the time of day, with the user's name if set.
+  // Friendly greeting based on the time of day. The user's name goes in the
+  // title below (not here) so it doesn't appear twice.
   const hour = new Date().getHours();
-  const baseGreeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
-  const greeting = profile.name ? `${baseGreeting}, ${profile.name}` : baseGreeting;
+  const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
 
   // Next planned session: the soonest scheduled day from today onwards whose
   // workout still exists.
@@ -111,7 +111,7 @@ export default function Home() {
       {/* Colourful hero */}
       <PageHero
         eyebrow={`${greeting} ✊`}
-        title={t('title')}
+        title={profile.name ? t('title', { name: profile.name }) : t('titleNoName')}
         action={
           <Link to="/profile" className="home-avatar" aria-label={t('aboutAppAria')}>
             {profile.avatar ? (

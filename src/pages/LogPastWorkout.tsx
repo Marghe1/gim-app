@@ -11,6 +11,7 @@ import {
   getLastWeightForExercise,
   getLastSameWorkoutPerformance,
   getTimedExerciseIds,
+  getMinuteExerciseIds,
   formatCount,
   localDateKey,
 } from '../utils/storage';
@@ -59,6 +60,7 @@ export default function LogPastWorkout() {
 
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [timedIds] = useState<Set<string>>(() => getTimedExerciseIds());
+  const [minuteIds] = useState<Set<string>>(() => getMinuteExerciseIds());
 
   // When set, we're editing an existing history entry rather than adding a new
   // one. We keep its id/workoutId/workoutName so the saved log replaces it.
@@ -273,6 +275,7 @@ export default function LogPastWorkout() {
                 {exerciseLogs.map((log, exIndex) => {
                   const isSkipped = skipped.has(exIndex);
                   const isTimed = timedIds.has(log.exerciseId);
+                  const isMinutes = minuteIds.has(log.exerciseId);
                   return (
                     <div key={exIndex} className="card" style={{ opacity: isSkipped ? 0.5 : 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isSkipped ? 0 : 12 }}>
@@ -316,11 +319,11 @@ export default function LogPastWorkout() {
                               )}
 
                               <Stepper
-                                label={isTimed ? t('timeLabel') : t('repsLabel')}
-                                value={set.reps}
-                                onMinus={() => adjustReps(exIndex, setIndex, -1)}
-                                onPlus={() => adjustReps(exIndex, setIndex, 1)}
-                                onChange={v => updateSet(exIndex, setIndex, 'reps', v)}
+                                label={isTimed ? (isMinutes ? t('minLabel') : t('timeLabel')) : t('repsLabel')}
+                                value={isMinutes ? set.reps / 60 : set.reps}
+                                onMinus={() => adjustReps(exIndex, setIndex, isMinutes ? -60 : -1)}
+                                onPlus={() => adjustReps(exIndex, setIndex, isMinutes ? 60 : 1)}
+                                onChange={v => updateSet(exIndex, setIndex, 'reps', isMinutes ? v * 60 : v)}
                               />
 
                               <button
