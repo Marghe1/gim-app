@@ -110,7 +110,7 @@ export default function Home() {
     <div className="home">
       {/* Colourful hero */}
       <PageHero
-        eyebrow={`${greeting} ✊`}
+        eyebrow={`${greeting} 💪`}
         title={profile.name ? t('title', { name: profile.name }) : t('titleNoName')}
         action={
           <Link to="/profile" className="home-avatar" aria-label={t('aboutAppAria')}>

@@ -23,6 +23,7 @@ export default function ExerciseDetail() {
   const [defaultWeight, setDefaultWeight] = useState<number>(0);
   const [weightIncrement, setWeightIncrement] = useState<number>(2.5);
   const [isTimed, setIsTimed] = useState<boolean>(false);
+  const [timeInMinutes, setTimeInMinutes] = useState<boolean>(false);
   const [videoUrl, setVideoUrl] = useState<string>('');
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function ExerciseDetail() {
       setDefaultWeight(found.defaultWeight || 0);
       setWeightIncrement(found.weightIncrement || 2.5);
       setIsTimed(found.isTimed || false);
+      setTimeInMinutes(found.timeUnit === 'minutes');
       setVideoUrl(found.videoUrl || '');
     }
 
@@ -51,6 +53,7 @@ export default function ExerciseDetail() {
       defaultWeight: defaultWeight || undefined,
       weightIncrement: weightIncrement || 2.5,
       isTimed: isTimed || undefined,
+      timeUnit: isTimed && timeInMinutes ? 'minutes' : undefined,
       videoUrl: videoUrl.trim() || undefined,
     };
 
@@ -212,6 +215,24 @@ export default function ExerciseDetail() {
             {t('timeBasedHint')}
           </p>
         </div>
+
+        {/* Minutes vs seconds — only relevant for timed exercises */}
+        {isTimed && (
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={timeInMinutes}
+                onChange={e => setTimeInMinutes(e.target.checked)}
+                style={{ width: 18, height: 18 }}
+              />
+              <span className="form-label" style={{ margin: 0 }}>{t('minutesLabel')}</span>
+            </label>
+            <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+              {t('minutesHint')}
+            </p>
+          </div>
+        )}
 
         {/* Weight settings only make sense for rep-based exercises */}
         {!isTimed && (
