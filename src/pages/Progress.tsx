@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, Trophy, Flame, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingUp, Trophy, Flame, CalendarDays, ChevronLeft, ChevronRight, Download, FileSpreadsheet } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { WorkoutLog } from '../utils/storage';
 import { getWorkoutLogs, getTimedExerciseIds, formatCount } from '../utils/storage';
 import PageHero from '../components/PageHero';
+import { computeSessionStats, effortDistribution, downloadProgressCsv, downloadProgressXlsx } from '../utils/progressStats';
+import { OverallProgressChart, EffortPie, VolumeChart, RepsChart } from '../components/ProgressCharts';
 
 type Metric = 'weight' | 'reps' | 'time';
 
@@ -125,6 +127,11 @@ export default function Progress() {
 
   const weekDelta = weeklyStats.thisWeek - weeklyStats.lastWeek;
 
+  // Per-session analytics for the charts and the CSV/Excel export.
+  const timedIds = useMemo(() => getTimedExerciseIds(), []);
+  const sessionStats = useMemo(() => computeSessionStats(logs, timedIds), [logs, timedIds]);
+  const effortSlices = useMemo(() => effortDistribution(logs), [logs]);
+
   return (
     <div className="home">
       <PageHero
@@ -159,6 +166,30 @@ export default function Progress() {
         </div>
       ) : (
         <>
+          {/* Export buttons */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => downloadProgressCsv(sessionStats)}>
+              <Download size={18} /> CSV
+            </button>
+            <button
+              className="btn btn-secondary"
+              style={{ flex: 1 }}
+              onClick={() => downloadProgressXlsx(sessionStats).catch(() => alert('Sorry, the Excel file could not be created.'))}
+            >
+              <FileSpreadsheet size={18} /> Excel
+            </button>
+          </div>
+
+          {/* Overall progress trend (the headline chart) */}
+          <OverallProgressChart stats={sessionStats} />
+
+          {/* Effort breakdown */}
+          <EffortPie slices={effortSlices} />
+
+          {/* Weight & reps over time */}
+          <VolumeChart stats={sessionStats} />
+          <RepsChart stats={sessionStats} />
+
           {/* Workout calendar */}
           <WorkoutCalendar logs={logs} />
 
